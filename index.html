@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>2026 노후 공공임대 리모델링 공사 현황 관리자</title>
+  <style>
+    :root {
+      --color-background-primary: #ffffff;
+      --color-background-secondary: #f8f9fa;
+      --color-border-secondary: #dee2e6;
+      --color-text-primary: #212529;
+      --color-text-secondary: #495057;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font-sans); padding: 1.5rem; background: #f1f3f5; color: var(--color-text-primary); }
+    .wrap { max-width: 1600px; margin: 0 auto; background: var(--color-background-primary); padding: 1.5rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+    
+    .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; border-bottom: 2px solid var(--color-border-secondary); padding-bottom: 1rem; }
+    .top-bar h1 { font-size: 22px; font-weight: bold; color: #1a365d; }
+    .sync-badge { font-size: 12px; padding: 5px 12px; border-radius: 20px; background: #e2f0d9; color: #385723; font-weight: bold; }
+    
+    .section-title { font-size: 14px; font-weight: bold; color: #1a365d; margin: 1.2rem 0 0.5rem 0; display: flex; align-items: center; gap: 5px; }
+    
+    .stats-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 1rem; }
+    .stat-card { background: var(--color-background-secondary); border: 1px solid var(--color-border-secondary); padding: 10px 12px; border-radius: 6px; text-align: center; }
+    .stat-card.t-total { border-left: 5px solid #1a365d; background: #edf2f7; }
+    .stat-card.t-pool { border-left: 5px solid #fcc419; }
+    .stat-card.t-confirm { border-left: 5px solid #e03131; }
+    .stat-card.demolishing { border-left: 5px solid #868e96; }
+    .stat-card.phase1 { border-left: 5px solid #f76707; }
+    .stat-card.done { border-left: 5px solid #37b24d; }
+    .stat-label { font-size: 11px; color: var(--color-text-secondary); margin-bottom: 4px; font-weight: 500; }
+    .stat-val { font-size: 18px; font-weight: bold; }
+
+    .control-bar { display: flex; gap: 10px; align-items: center; margin: 1.5rem 0 1rem 0; background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px solid #e9ecef; }
+    .btn-mode { padding: 8px 16px; font-size: 13px; font-weight: bold; border-radius: 4px; border: 1px solid #ced4da; background: #fff; cursor: pointer; transition: all 0.2s; }
+    .btn-mode.active { background: #e03131; color: #fff; border-color: #e03131; }
+    .batch-panel { display: none; align-items: center; gap: 10px; font-size: 13px; font-weight: 500; color: #495057; }
+    .batch-select { padding: 6px 12px; border-radius: 4px; border: 1px solid #ced4da; font-size: 13px; }
+    .btn-batch-apply { padding: 6px 14px; background: #1a365d; color: #fff; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
+
+    .complex-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1rem; padding: 8px; background: #e9ecef; border-radius: 6px; }
+    .ctab { font-size: 13px; padding: 8px 16px; border-radius: 4px; border: none; background: #fff; color: var(--color-text-secondary); cursor: pointer; font-weight: 500; transition: all 0.2s; }
+    .ctab.active { background: #1a365d; color: #fff; }
+    
+    .dong-tabs { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 1.5rem; border-bottom: 1px solid var(--color-border-secondary); padding-bottom: 8px; }
+    .dtab { font-size: 13px; padding: 6px 12px; border: 1px solid var(--color-border-secondary); background: #fff; border-radius: 4px; cursor: pointer; }
+    .dtab.active { background: #495057; color: #fff; border-color: #495057; }
+    
+    .grid-container { overflow-x: auto; margin-top: 1rem; background: #fff; border: 1px solid var(--color-border-secondary); border-radius: 6px; padding: 1rem; }
+    .grid-table { border-collapse: separate; border-spacing: 4px; width: max-content; margin: 0 auto; }
+    .floor-row th { background: #f1f3f5; font-size: 12px; padding: 6px 10px; border-radius: 3px; color: #495057; font-weight: 600; }
+    
+    .u-btn { position: relative; width: 70px; height: 42px; border: 1px solid #dee2e6; background: #fff; border-radius: 4px; font-size: 11px; font-weight: 500; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: transform 0.1s; }
+    .u-btn:hover { transform: scale(1.04); }
+    .u-btn .u-num { font-weight: bold; }
+    .u-btn .u-st { font-size: 9px; opacity: 0.8; margin-top: 2px; }
+
+    .u-cb { display: none; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; cursor: pointer; z-index: 10; }
+
+    .st-none { background: #fff; color: #adb5bd; }
+    .st-target_pool { background: #fff9db; color: #f59f00; border: 2px solid #fab005; }
+    .st-target_confirm { background: #ffe3e3; color: #e03131; border: 2px solid #e03131; font-weight: bold; }
+    .st-demolishing { background: #f1f3f5; color: #495057; border: 2px solid #868e96; }
+    .st-phase1 { background: #fff4e6; color: #d9480f; border: 2px solid #f76707; }
+    .st-done { background: #ebfbee; color: #2b8a3e; border: 2px solid #37b24d; }
+
+    .modal-bg { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); display:none; align-items:center; justify-content:center; z-index:999; }
+    .modal { background:#fff; padding:1.5rem; border-radius:8px; width:340px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+    .modal-h { font-size:16px; font-weight:bold; margin-bottom:1rem; color:#1a365d; text-align: center; }
+    .sopt-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 1.5rem; }
+    .sopt { display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid #dee2e6; border-radius: 6px; cursor: pointer; font-size: 13px; }
+    .sopt:hover { background: #f8f9fa; }
+    .sopt.selected { border-color: #1a365d; background: #e7f5ff; font-weight: bold; }
+    .swatch { width: 16px; height: 16px; border-radius: 3px; border: 1px solid rgba(0,0,0,0.1); }
+    .modal-btns { display: flex; gap: 6px; }
+    .modal-btns button { flex: 1; padding: 10px; border-radius: 6px; border: none; font-size: 13px; font-weight: bold; cursor: pointer; }
+    .btn-close { background: #e9ecef; color: #495057; }
+    .btn-apply { background: #1a365d; color: #fff; }
+  </style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="top-bar">
+    <h1>🏢 노후 임대주택 리모델링 현황판 (클린 초기화 버전)</h1>
+    <div class="sync-badge" id="syncStatus">● 동기화 준비 완료</div>
+  </div>
+
+  <div class="section-title">📊 [전체 단지 통합 집계] (5개 단지 총합)</div>
+  <div class="stats-container">
+    <div class="stat-card t-total"> <div class="stat-label">전체 총 세대수</div> <div class="stat-val" id="allTotal">0</div> </div>
+    <div class="stat-card t-pool"> <div class="stat-label">전체 작업대상</div> <div class="stat-val" style="color:#f59f00" id="allPool">0</div> </div>
+    <div class="stat-card t-confirm"> <div class="stat-label">전체 작업확정</div> <div class="stat-val" style="color:#e03131" id="allConfirm">0</div> </div>
+    <div class="stat-card demolishing"> <div class="stat-label">전체 해체작업중</div> <div class="stat-val" style="color:#868e96" id="allDemo">0</div> </div>
+    <div class="stat-card phase1"> <div class="stat-label">전체 1차작업중</div> <div class="stat-val" style="color:#f76707" id="allPhase1">0</div> </div>
+    <div class="stat-card done"> <div class="stat-label">전체 작업완료</div> <div class="stat-val" style="color:#37b24d" id="allDone">0</div> </div>
+  </div>
+
+  <div class="section-title">🏢 [선택 단지 현황] (<span id="currentComplexTitle">전주평화1</span>)</div>
+  <div class="stats-container">
+    <div class="stat-card"> <div class="stat-label">단지 총 세대수</div> <div class="stat-val" id="stTotal">0</div> </div>
+    <div class="stat-card t-pool"> <div class="stat-label">작업대상 (후보)</div> <div class="stat-val" style="color:#f59f00" id="stPool">0</div> </div>
+    <div class="stat-card t-confirm"> <div class="stat-label">작업확정 (발주)</div> <div class="stat-val" style="color:#e03131" id="stConfirm">0</div> </div>
+    <div class="stat-card demolishing"> <div class="stat-label">해체작업중</div> <div class="stat-val" style="color:#868e96" id="stDemo">0</div> </div>
+    <div class="stat-card phase1"> <div class="stat-label">1차작업중</div> <div class="stat-val" style="color:#f76707" id="stPhase1">0</div> </div>
+    <div class="stat-card done"> <div class="stat-label">작업완료</div> <div class="stat-val" style="color:#37b24d" id="stDone">0</div> </div>
+  </div>
+
+  <div class="control-bar">
+    <button class="btn-mode" id="btnBatchMode" onclick="toggleBatchMode()">🛠️ 일괄 변경 모드 켜기</button>
+    <div class="batch-panel" id="batchPanel">
+      <span>선택한 세대들을 일괄적으로 ➔ </span>
+      <select class="batch-select" id="batchStatusSelect">
+        <option value="none">미대상 (초기화)</option>
+        <option value="target_pool">작업대상 (후보)</option>
+        <option value="target_confirm">작업확정 (발주)</option>
+        <option value="demolishing">해체작업중</option>
+        <option value="phase1">1차작업중</option>
+        <option value="done">작업완료</option>
+      </select>
+      <button class="btn-batch-apply" onclick="applyBatchChange()">일괄 적용</button>
+    </div>
+  </div>
+
+  <div class="complex-tabs" id="complexTabs"></div>
+  <div class="dong-tabs" id="dongTabs"></div>
+
+  <div class="grid-container">
+    <table class="grid-table" id="gridTable"></table>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <div class="modal-h" id="mTitle">세대 상태 변경</div>
+    <div class="sopt-list" id="sopts"></div>
+    <div class="modal-btns">
+      <button class="btn-close" onclick="closeModal()">취소</button>
+      <button class="btn-apply" onclick="applyModal()">변경 적용</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const COMPLEXES = {
+  "전주평화1": {
+    floors: 15,
+    dongs: {
+      "101동": Array.from({length: 12}, (_, i) => i + 1),
+      "102동": Array.from({length: 20}, (_, i) => i + 1),
+      "103동": Array.from({length: 20}, (_, i) => i + 1),
+      "104동": Array.from({length: 20}, (_, i) => i + 1),
+      "105동": Array.from({length: 20}, (_, i) => i + 1),
+      "106동": Array.from({length: 20}, (_, i) => i + 1)
+    }
+  },
+  "전주평화4": {
+    floors: 15,
+    dongs: {
+      "401동": Array.from({length: 10}, (_, i) => i + 1),
+      "402동": Array.from({length: 10}, (_, i) => i + 1),
+      "403동": Array.from({length: 10}, (_, i) => i + 1),
+      "404동": Array.from({length: 10}, (_, i) => i + 1),
+      "405동": Array.from({length: 16}, (_, i) => i + 1),
+      "406동": Array.from({length: 10}, (_, i) => i + 1),
+      "407동": Array.from({length: 16}, (_, i) => i + 1)
+    }
+  },
+  "익산부송1": {
+    floors: 15,
+    dongs: {
+      "101동": Array.from({length: 10}, (_, i) => i + 1),
+      "102동": Array.from({length: 10}, (_, i) => i + 1),
+      "103동": Array.from({length: 16}, (_, i) => i + 1),
+      "104동": Array.from({length: 16}, (_, i) => i + 1),
+      "105동": Array.from({length: 16}, (_, i) => i + 1),
+      "106동": Array.from({length: 24}, (_, i) => i + 1),
+      "107동": Array.from({length: 16}, (_, i) => i + 1)
+    }
+  },
+  "익산동산1": {
+    floors: 15,
+    dongs: {
+      "101동": Array.from({length: 10}, (_, i) => i + 1),
+      "102동": Array.from({length: 10}, (_, i) => i + 1),
+      "103동": Array.from({length: 10}, (_, i) => i + 1),
+      "104동": Array.from({length: 16}, (_, i) => i + 1)
+    }
+  },
+  "군산나운4": {
+    floors: 15,
+    dongs: {
+      "401동": Array.from({length: 10}, (_, i) => i + 1),
+      "402동": Array.from({length: 24}, (_, i) => i + 1),
+      "403동": Array.from({length: 24}, (_, i) => i + 1),
+      "404동": Array.from({length: 10}, (_, i) => i + 1),
+      "405동": Array.from({length: 10}, (_, i) => i + 1),
+      "406동": Array.from({length: 24}, (_, i) => i + 1),
+      "407동": Array.from({length: 16}, (_, i) => i + 1),
+      "408동": Array.from({length: 16}, (_, i) => i + 1)
+    }
+  }
+};
+
+const STATUSES = [
+  { key: 'none', label: '미대상', color: '#fff' },
+  { key: 'target_pool', label: '작업대상', color: '#fff9db', border: '#fab005' },
+  { key: 'target_confirm', label: '작업확정', color: '#ffe3e3', border: '#e03131' },
+  { key: 'demolishing', label: '해체작업중', color: '#f1f3f5', border: '#868e96' },
+  { key: 'phase1', label: '1차작업중', color: '#fff4e6', border: '#f76707' },
+  { key: 'done', label: '작업완료', color: '#ebfbee', border: '#37b24d' }
+];
+
+let currentC = "전주평화1";
+let currentD = "101동";
+let state = {};
+let isBatchMode = false;
+
+// ⚠️ 브라우저에 임시 저장되어 있던 기존 세션 상태를 완전히 클리어하고 빈 값으로 리셋
+function initData() {
+  localStorage.removeItem('remo_v4_state'); // 완벽한 초기화 보장
+  state = {};
+  saveState();
+}
+
+function saveState() {
+  localStorage.setItem('remo_v4_state', JSON.stringify(state));
+  document.getElementById('syncStatus').textContent = "● 시스템 실시간 연동됨 (" + new Date().toLocaleTimeString() + ")";
+}
+
+function renderTabs() {
+  document.getElementById('complexTabs').innerHTML = Object.keys(COMPLEXES).map(c => 
+    `<button class="ctab ${c===currentC?'active':''}" onclick="changeComplex('${c}')">${c}</button>`
+  ).join('');
+  renderDongTabs();
+}
+
+function renderDongTabs() {
+  const dongs = Object.keys(COMPLEXES[currentC].dongs);
+  document.getElementById('dongTabs').innerHTML = dongs.map(d => 
+    `<button class="dtab ${d===currentD?'active':''}" onclick="changeDong('${d}')">${d}</button>`
+  ).join('');
+  document.getElementById('currentComplexTitle').textContent = currentC;
+  renderGrid();
+  calculateStats();
+}
+
+function renderGrid() {
+  const table = document.getElementById('gridTable');
+  table.innerHTML = "";
+  
+  const compInfo = COMPLEXES[currentC];
+  const lines = compInfo.dongs[currentD];
+  const totalFloors = compInfo.floors;
+
+  let headTr = '<tr><th>층</th>';
+  lines.forEach(l => { headTr += `<th>${l}호</th>`; });
+  headTr += '</tr>';
+  table.innerHTML += headTr;
+
+  for (let f = totalFloors; f >= 1; f--) {
+    let tr = `<tr><th>${f}F</th>`;
+    lines.forEach(l => {
+      const roomNum = f * 100 + l;
+      const key = `${currentC}_${currentD}_${roomNum}`;
+      const curStatus = state[key] || 'none';
+      const statusObj = STATUSES.find(s=>s.key===curStatus) || STATUSES[0];
+      
+      tr += `<td>
+        <button class="u-btn st-${curStatus}" onclick="handleRoomClick(event, '${roomNum}')">
+          <input type="checkbox" class="u-cb" data-room="${roomNum}" style="display: ${isBatchMode ? 'block' : 'none'}" onclick="event.stopPropagation();">
+          <span class="u-num">${roomNum}</span>
+          <span class="u-st">${statusObj.label}</span>
+        </button>
+      </td>`;
+    });
+    tr += '</tr>';
+    table.innerHTML += tr;
+  }
+}
+
+function handleRoomClick(e, roomNum) {
+  if (isBatchMode) {
+    const cb = e.currentTarget.querySelector('.u-cb');
+    cb.checked = !cb.checked;
+  } else {
+    openModal(roomNum);
+  }
+}
+
+function toggleBatchMode() {
+  isBatchMode = !isBatchMode;
+  const btn = document.getElementById('btnBatchMode');
+  const panel = document.getElementById('batchPanel');
+  
+  if (isBatchMode) {
+    btn.textContent = "🛑 일괄 변경 모드 끄기";
+    btn.classList.add('active');
+    panel.style.display = "flex";
+  } else {
+    btn.textContent = "🛠️ 일괄 변경 모드 켜기";
+    btn.classList.remove('active');
+    panel.style.display = "none";
+  }
+  renderGrid();
+}
+
+function applyBatchChange() {
+  const checkboxes = document.querySelectorAll('.u-cb:checked');
+  if (checkboxes.length === 0) {
+    alert('선택된 세대가 없습니다.');
+    return;
+  }
+  
+  const targetStatus = document.getElementById('batchStatusSelect').value;
+  checkboxes.forEach(cb => {
+    const roomNum = cb.getAttribute('data-room');
+    const key = `${currentC}_${currentD}_${roomNum}`;
+    if (targetStatus === 'none') {
+      delete state[key];
+    } else {
+      state[key] = targetStatus;
+    }
+  });
+
+  saveState();
+  alert(`${checkboxes.length}개 세대가 일괄 변경되었습니다.`);
+  toggleBatchMode();
+  calculateStats();
+}
+
+function calculateStats() {
+  let total = 0, pool = 0, confirm = 0, demo = 0, phase1 = 0, done = 0;
+  const dongs = COMPLEXES[currentC].dongs;
+  
+  for (const d in dongs) {
+    dongs[d].forEach(l => {
+      for (let f = 1; f <= COMPLEXES[currentC].floors; f++) {
+        total++;
+        const roomNum = f * 100 + l;
+        const key = `${currentC}_${d}_${roomNum}`;
+        const st = state[key] || 'none';
+        if (st === 'target_pool') pool++;
+        if (st === 'target_confirm') confirm++;
+        if (st === 'demolishing') demo++;
+        if (st === 'phase1') phase1++;
+        if (st === 'done') done++;
+      }
+    });
+  }
+
+  document.getElementById('stTotal').textContent = total;
+  document.getElementById('stPool').textContent = pool;
+  document.getElementById('stConfirm').textContent = confirm;
+  document.getElementById('stDemo').textContent = demo;
+  document.getElementById('stPhase1').textContent = phase1;
+  document.getElementById('stDone').textContent = done;
+
+  let allTotal = 0, allPool = 0, allConfirm = 0, allDemo = 0, allPhase1 = 0, allDone = 0;
+  
+  for (const cKey in COMPLEXES) {
+    const cDongs = COMPLEXES[cKey].dongs;
+    const cFloors = COMPLEXES[cKey].floors;
+    for (const dKey in cDongs) {
+      cDongs[dKey].forEach(l => {
+        for (let f = 1; f <= cFloors; f++) {
+          allTotal++;
+          const roomNum = f * 100 + l;
+          const key = `${cKey}_${dKey}_${roomNum}`;
+          const st = state[key] || 'none';
+          if (st === 'target_pool') allPool++;
+          if (st === 'target_confirm') allConfirm++;
+          if (st === 'demolishing') allDemo++;
+          if (st === 'phase1') allPhase1++;
+          if (st === 'done') allDone++;
+        }
+      });
+    }
+  }
+
+  document.getElementById('allTotal').textContent = allTotal;
+  document.getElementById('allPool').textContent = allPool;
+  document.getElementById('allConfirm').textContent = allConfirm;
+  document.getElementById('allDemo').textContent = allDemo;
+  document.getElementById('allPhase1').textContent = allPhase1;
+  document.getElementById('allDone').textContent = allDone;
+}
+
+function changeComplex(c) {
+  currentC = c;
+  currentD = Object.keys(COMPLEXES[c].dongs)[0];
+  if(isBatchMode) toggleBatchMode();
+  renderTabs();
+}
+
+function changeDong(d) {
+  currentD = d;
+  if(isBatchMode) toggleBatchMode();
+  document.querySelectorAll('.dtab').forEach(btn => btn.classList.toggle('active', btn.textContent === d));
+  renderGrid();
+}
+
+let activeRoomKey = null;
+let selectedStatus = 'none';
+
+function openModal(roomNum) {
+  activeRoomKey = `${currentC}_${currentD}_${roomNum}`;
+  selectedStatus = state[activeRoomKey] || 'none';
+  document.getElementById('mTitle').textContent = `${currentC} ${currentD} ${roomNum}호 상태 변경`;
+  
+  document.getElementById('sopts').innerHTML = STATUSES.map(s => `
+    <div class="sopt ${s.key === selectedStatus ? 'selected' : ''}" onclick="selectStatusOption('${s.key}')">
+      <div class="swatch" style="background:${s.color}; border-color:${s.border||'#dee2e6'}"></div>
+      <span>${s.label}</span>
+    </div>
+  `).join('');
+  document.getElementById('modalBg').style.display = 'flex';
+}
+
+function selectStatusOption(key) {
+  selectedStatus = key;
+  document.querySelectorAll('.sopt').forEach((el, idx) => {
+    el.classList.toggle('selected', STATUSES[idx].key === key);
+  });
+}
+
+function closeModal() { document.getElementById('modalBg').style.display = 'none'; }
+
+function applyModal() {
+  if (selectedStatus === 'none') {
+    delete state[activeRoomKey];
+  } else {
+    state[activeRoomKey] = selectedStatus;
+  }
+  saveState();
+  closeModal();
+  renderGrid();
+  calculateStats();
+}
+
+initData();
+renderTabs();
+</script>
+</body>
+</html>
