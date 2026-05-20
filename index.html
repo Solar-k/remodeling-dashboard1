@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <title>2026 노후 공공임대 리모델링 공사 현황 관리자 (초고속 버전)</title>
+  <title>2026 노후 공공임대 리모델링 공사 현황 관리자 (실시간 자동 새로고침)</title>
   <style>
     :root {
       --color-background-primary: #ffffff;
@@ -18,9 +18,12 @@
     
     .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; border-bottom: 2px solid var(--color-border-secondary); padding-bottom: 1rem; }
     .top-bar h1 { font-size: 22px; font-weight: bold; color: #1a365d; }
+    
+    .badge-zone { display: flex; gap: 8px; align-items: center; }
     .sync-badge { font-size: 12px; padding: 5px 12px; border-radius: 20px; background: #edf2f7; color: #495057; font-weight: bold; transition: all 0.3s; }
     .sync-badge.online { background: #e2f0d9; color: #385723; }
     .sync-badge.loading { background: #fff3bf; color: #d9480f; }
+    .timer-badge { font-size: 12px; padding: 5px 12px; border-radius: 20px; background: #e8f4fd; color: #1d4ed8; font-weight: bold; border: 1px solid #bfdbfe; }
     
     .section-title { font-size: 14px; font-weight: bold; color: #1a365d; margin: 1.2rem 0 0.5rem 0; display: flex; align-items: center; gap: 5px; }
     
@@ -87,8 +90,11 @@
 
 <div class="wrap">
   <div class="top-bar">
-    <h1>🏢 노후 임대주택 리모델링 현황판 (초고속 다중 동기화 버전)</h1>
-    <div class="sync-badge" id="syncStatus">⏳ 서버 연결 중...</div>
+    <h1>🏢 노후 임대주택 리모델링 현황판 (실시간 자동 새로고침)</h1>
+    <div class="badge-zone">
+      <div class="timer-badge" id="autoTimer">⏱️ 자동 동기화 켜짐</div>
+      <div class="sync-badge" id="syncStatus">⏳ 서버 연결 중...</div>
+    </div>
   </div>
 
   <div class="section-title">📊 [전체 단지 통합 집계] (5개 단지 총합)</div>
@@ -125,7 +131,7 @@
       </select>
       <button class="btn-batch-apply" onclick="applyBatchChange()">⚡ 초고속 일괄 적용</button>
     </div>
-    <button class="btn-refresh" onclick="loadFromCloud()">🔄 원격 새로고침</button>
+    <button class="btn-refresh" onclick="manualRefresh()">🔄 수동 새로고침</button>
   </div>
 
   <div class="complex-tabs" id="complexTabs"></div>
@@ -148,7 +154,7 @@
 </div>
 
 <script>
-// ⚠️ 1단계에서 획득한 새 구글 웹 앱 URL 주소를 아래 큰따옴표 안에 넣어주세요!
+// ⚠️ 사용 중이신 구글 웹 앱 URL 주소를 아래에 정확히 입력해 주세요!
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz0TOiIXFV3EMgKmaOW-W6ndqrHlREmvUrdgCZq-0WjQZH2UqYLfOF5tD_5MvbPujSM/exec";
 
 const COMPLEXES = {
@@ -173,33 +179,91 @@ let currentD = "101동";
 let state = {};
 let isBatchMode = false;
 
+// ⏱️ 자동 동기화용 변수 설정
+const REFRESH_INTERVAL = 10; // 자동 새로고침 간격 (단위: 초)
+let timeRemaining = REFRESH_INTERVAL;
+let timerId = null;
+let isUpdating = false;
+
 function setSyncStatus(text, type) {
   const badge = document.getElementById('syncStatus');
   badge.textContent = text;
   badge.className = "sync-badge " + type;
 }
 
-async function loadFromCloud() {
+// ⏱️ 타이머 구동 및 제어 함수
+function updateTimerDisplay() {
+  const tBadge = document.getElementById('autoTimer');
+  if (isBatchMode) {
+    tBadge.textContent = "⏸️ 일괄 변경 중 (자동 갱신 중지)";
+    tBadge.style.background = "#fff5f5";
+    tBadge.style.color = "#c92a2a";
+    tBadge.style.borderColor = "#ffa8a8";
+  } else if (isUpdating) {
+    tBadge.textContent = "🔄 실시간 동기화 확인 중...";
+  } else {
+    tBadge.textContent = `⏱️ ${timeRemaining}초 뒤 자동 새로고침`;
+    tBadge.style.background = "#e8f4fd";
+    tBadge.style.color = "#1d4ed8";
+    tBadge.style.borderColor = "#bfdbfe";
+  }
+}
+
+function startAutoTimer() {
+  if (timerId) clearInterval(timerId);
+  timerId = setInterval(() => {
+    if (isBatchMode || isUpdating) return; // 작업 중이거나 통신 중이면 카운트 안 함
+    
+    timeRemaining--;
+    if (timeRemaining <= 0) {
+      loadFromCloud(true); // 자동 백그라운드 갱신
+      timeRemaining = REFRESH_INTERVAL;
+    }
+    updateTimerDisplay();
+  }, 1000);
+}
+
+// 🌐 데이터 로드 함수 (isBackground = true 일 때는 조용히 업데이트)
+async function loadFromCloud(isBackground = false) {
   if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("여기에")) {
     setSyncStatus("⚠️ 구글 시트 URL 주소가 설정되지 않았습니다.", "loading");
     return;
   }
-  setSyncStatus("🔄 클라우드 데이터 동기화 중...", "loading");
+  
+  if (!isBackground) {
+    setSyncStatus("🔄 클라우드 데이터 동기화 중...", "loading");
+  }
+  isUpdating = true;
+  updateTimerDisplay();
+
   try {
     const res = await fetch(GOOGLE_SCRIPT_URL);
     state = await res.json();
     setSyncStatus("● 클라우드 실시간 동기화됨 (" + new Date().toLocaleTimeString() + ")", "online");
+    
+    // 현재 선택 창 기준으로 테이블과 통계만 부드럽게 새로 고침
     renderGrid();
     calculateStats();
   } catch (e) {
-    setSyncStatus("❌ 데이터 불러오기 실패", "loading");
+    setSyncStatus("❌ 데이터 실시간 연동 실패", "loading");
+  } finally {
+    isUpdating = false;
+    timeRemaining = REFRESH_INTERVAL; // 타이머 초기화
+    updateTimerDisplay();
   }
 }
 
-// 🌐 묶음 단위를 한 번에 보내는 핵심 초고속 전송 함수
+// 수동 새로고침 버튼 작동
+function manualRefresh() {
+  loadFromCloud(false);
+}
+
+// 🌐 묶음 단위를 한 번에 보내는 초고속 전송 함수
 async function saveBatchToCloud(updatesArray) {
   if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("여기에") || updatesArray.length === 0) return;
   setSyncStatus("⏳ 중앙 서버에 실시간 동기화 중... (" + updatesArray.length + "건)", "loading");
+  isUpdating = true;
+  
   try {
     await fetch(GOOGLE_SCRIPT_URL, {
       method: "POST",
@@ -208,7 +272,7 @@ async function saveBatchToCloud(updatesArray) {
       body: JSON.stringify({ updates: updatesArray })
     });
     
-    // 화면 로컬 데이터 즉시 업데이트
+    // 화면 로컬 데이터 반영
     updatesArray.forEach(item => {
       if (item.status === 'none') delete state[item.key];
       else state[item.key] = item.status;
@@ -219,6 +283,10 @@ async function saveBatchToCloud(updatesArray) {
     calculateStats();
   } catch (e) {
     setSyncStatus("❌ 서버 저장 실패", "loading");
+  } finally {
+    isUpdating = false;
+    timeRemaining = REFRESH_INTERVAL;
+    updateTimerDisplay();
   }
 }
 
@@ -241,8 +309,16 @@ function renderDongTabs() {
 
 function renderGrid() {
   const table = document.getElementById('gridTable');
-  table.innerHTML = "";
   
+  // 체크박스 유실 방지: 일괄 모드일 때는 체크 상태 임시 수집
+  const checkedRooms = new Set();
+  if (isBatchMode) {
+    document.querySelectorAll('.u-cb:checked').forEach(cb => {
+      checkedRooms.add(cb.getAttribute('data-room'));
+    });
+  }
+
+  table.innerHTML = "";
   const compInfo = COMPLEXES[currentC];
   const lines = compInfo.dongs[currentD];
   const totalFloors = compInfo.floors;
@@ -259,10 +335,11 @@ function renderGrid() {
       const key = `${currentC}_${currentD}_${roomNum}`;
       const curStatus = state[key] || 'none';
       const statusObj = STATUSES.find(s=>s.key===curStatus) || STATUSES[0];
+      const isChecked = checkedRooms.has(String(roomNum)) ? 'checked' : '';
       
       tr += `<td>
         <button class="u-btn st-${curStatus}" onclick="handleRoomClick(event, '${roomNum}')">
-          <input type="checkbox" class="u-cb" data-room="${roomNum}" style="display: ${isBatchMode ? 'block' : 'none'}" onclick="event.stopPropagation();">
+          <input type="checkbox" class="u-cb" data-room="${roomNum}" ${isChecked} style="display: ${isBatchMode ? 'block' : 'none'}" onclick="event.stopPropagation();">
           <span class="u-num">${roomNum}</span>
           <span class="u-st">${statusObj.label}</span>
         </button>
@@ -296,6 +373,7 @@ function toggleBatchMode() {
     panel.style.display = "none";
   }
   renderGrid();
+  updateTimerDisplay(); // 타이머 배지 즉시 중단/재개 처리
 }
 
 async function applyBatchChange() {
@@ -306,8 +384,6 @@ async function applyBatchChange() {
   }
   
   const targetStatus = document.getElementById('batchStatusSelect').value;
-  
-  // ⚡ 데이터를 한 배열에 묶기
   const batchUpdates = [];
   checkboxes.forEach(cb => {
     const roomNum = cb.getAttribute('data-room');
@@ -315,13 +391,10 @@ async function applyBatchChange() {
     batchUpdates.push({ key: key, status: targetStatus });
   });
 
-  // ⚡ 통신은 단 1번만 수행!
   await saveBatchToCloud(batchUpdates);
-
-  alert(`${checkboxes.length}개 세대가 1초 만에 서버에 저장되었습니다.`);
+  alert(`${checkboxes.length}개 세대가 성공적으로 저장되었습니다.`);
   toggleBatchMode();
-  // 최종 검증용 새로고침
-  loadFromCloud();
+  loadFromCloud(true);
 }
 
 function calculateStats() {
@@ -421,13 +494,14 @@ function selectStatusOption(key) {
 function closeModal() { document.getElementById('modalBg').style.display = 'none'; }
 
 async function applyModal() {
-  // 개별 변경도 새로운 통합 구조 배열 형태로 전송해 속도 최적화 유지
   await saveBatchToCloud([{ key: activeRoomKey, status: selectedStatus }]);
   closeModal();
 }
 
+// 🚀 프로그램 구동부
 renderTabs();
-loadFromCloud();
+loadFromCloud(false);
+startAutoTimer(); // 실시간 자동 새로고침 타이머 시작
 </script>
 </body>
 </html>
