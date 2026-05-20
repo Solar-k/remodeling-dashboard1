@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <title>2026 노후 공공임대 리모델링 공사 현황 관리자 (초고속 반응 버전)</title>
+  <title>2026 노후 공공임대 리모델링 공사 현황 관리자 (전체 인쇄 지원 버전)</title>
   <style>
     :root {
       --color-background-primary: #ffffff;
@@ -44,6 +44,9 @@
     .batch-panel { display: none; align-items: center; gap: 10px; font-size: 13px; font-weight: 500; color: #495057; }
     .batch-select { padding: 6px 12px; border-radius: 4px; border: 1px solid #ced4da; font-size: 13px; }
     .btn-batch-apply { padding: 6px 14px; background: #1a365d; color: #fff; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
+    
+    .btn-print { padding: 8px 16px; background: #2b8a3e; color: #fff; border: none; border-radius: 4px; font-size: 13px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+    .btn-print:hover { background: #237032; }
     .btn-refresh { margin-left: auto; padding: 8px 14px; background: #fff; color: #1a365d; border: 1px solid #1a365d; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; }
 
     .complex-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1rem; padding: 8px; background: #e9ecef; border-radius: 6px; }
@@ -62,10 +65,10 @@
     .u-btn:hover { transform: scale(1.04); }
     .u-btn .u-num { font-weight: bold; }
     .u-btn .u-st { font-size: 9px; opacity: 0.8; margin-top: 2px; }
-
     .u-cb { display: none; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; cursor: pointer; z-index: 10; }
 
-    .st-none { background: #fff; color: #adb5bd; }
+    /* 🎨 공사 상태별 색상 양식 정의 */
+    .st-none { background: #ffffff; color: #adb5bd; }
     .st-target_pool { background: #fff9db; color: #f59f00; border: 2px solid #fab005; }
     .st-target_confirm { background: #ffe3e3; color: #e03131; border: 2px solid #e03131; font-weight: bold; }
     .st-demolishing { background: #f1f3f5; color: #495057; border: 2px solid #868e96; }
@@ -84,13 +87,30 @@
     .modal-btns button { flex: 1; padding: 10px; border-radius: 6px; border: none; font-size: 13px; font-weight: bold; cursor: pointer; }
     .btn-close { background: #e9ecef; color: #495057; }
     .btn-apply { background: #1a365d; color: #fff; }
+
+    /* 🖨️ [인쇄 전용 초정밀 레이아웃 CSS 설정] */
+    @media print {
+      body { background: #fff; padding: 0; color: #000; font-size: 12px; }
+      .wrap { box-shadow: none; padding: 0; max-width: 100%; }
+      .control-bar, .complex-tabs, .dong-tabs, .badge-zone, .btn-refresh { display: none !important; } /* 버튼 및 내비게이션 숨김 */
+      .print-page-break { page-break-before: always; } /* 단지별 인쇄 페이지 분할 */
+      .grid-container { border: none; padding: 0; overflow: visible; }
+      .grid-table { width: 100% !important; max-width: 100%; border-spacing: 2px; page-break-inside: avoid; }
+      .u-btn { width: auto !important; min-width: 50px; height: 35px !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; border: 1px solid #999 !important; }
+      .st-none { background: #fff !important; }
+      .st-target_pool { background: #fff9db !important; }
+      .st-target_confirm { background: #ffe3e3 !important; }
+      .st-demolishing { background: #f1f3f5 !important; }
+      .st-phase1 { background: #fff4e6 !important; }
+      .st-done { background: #ebfbee !important; }
+    }
   </style>
 </head>
 <body>
 
-<div class="wrap">
+<div class="wrap" id="mainContent">
   <div class="top-bar">
-    <h1>🏢 노후 임대주택 리모델링 현황판 (초고속 반응 버전)</h1>
+    <h1>🏢 노후 임대주택 리모델링 현황판 (종합 버전)</h1>
     <div class="badge-zone">
       <div class="timer-badge" id="autoTimer">⏱️ 자동 동기화 켜짐</div>
       <div class="sync-badge" id="syncStatus">⏳ 서버 연결 중...</div>
@@ -98,48 +118,51 @@
   </div>
 
   <div class="section-title">📊 [전체 단지 통합 집계] (5개 단지 총합)</div>
-  <div class="stats-container">
+  <div class="stats-container" id="totalStatsZone">
     <div class="stat-card t-total"> <div class="stat-label">전체 총 세대수</div> <div class="stat-val" id="allTotal">0</div> </div>
     <div class="stat-card t-pool"> <div class="stat-label">전체 작업대상</div> <div class="stat-val" style="color:#f59f00" id="allPool">0</div> </div>
     <div class="stat-card t-confirm"> <div class="stat-label">전체 작업확정</div> <div class="stat-val" style="color:#e03131" id="allConfirm">0</div> </div>
-    <div class="stat-card demolishing"> <div class="stat-label">전체 철거공사</div> <div class="stat-val" style="color:#868e96" id="allDemo">0</div> </div>
-    <div class="stat-card phase1"> <div class="stat-label">전체 건축공사중</div> <div class="stat-val" style="color:#f76707" id="allPhase1">0</div> </div>
+    <div class="stat-card demolishing"> <div class="stat-label">전체 해체작업중</div> <div class="stat-val" style="color:#868e96" id="allDemo">0</div> </div>
+    <div class="stat-card phase1"> <div class="stat-label">전체 1차작업중</div> <div class="stat-val" style="color:#f76707" id="allPhase1">0</div> </div>
     <div class="stat-card done"> <div class="stat-label">전체 작업완료</div> <div class="stat-val" style="color:#37b24d" id="allDone">0</div> </div>
-  </div>
-
-  <div class="section-title">🏢 [선택 단지 현황] (<span id="currentComplexTitle">전주평화1</span>)</div>
-  <div class="stats-container">
-    <div class="stat-card"> <div class="stat-label">단지 총 세대수</div> <div class="stat-val" id="stTotal">0</div> </div>
-    <div class="stat-card t-pool"> <div class="stat-label">작업대상 (인테리어 미실시)</div> <div class="stat-val" style="color:#f59f00" id="stPool">0</div> </div>
-    <div class="stat-card t-confirm"> <div class="stat-label">작업확정 (공가 및 이사확정)</div> <div class="stat-val" style="color:#e03131" id="stConfirm">0</div> </div>
-    <div class="stat-card demolishing"> <div class="stat-label">철거공사</div> <div class="stat-val" style="color:#868e96" id="stDemo">0</div> </div>
-    <div class="stat-card phase1"> <div class="stat-label">건축공사중</div> <div class="stat-val" style="color:#f76707" id="stPhase1">0</div> </div>
-    <div class="stat-card done"> <div class="stat-label">작업완료</div> <div class="stat-val" style="color:#37b24d" id="stDone">0</div> </div>
   </div>
 
   <div class="control-bar">
     <button class="btn-mode" id="btnBatchMode" onclick="toggleBatchMode()">🛠️ 일괄 변경 모드 켜기</button>
     <div class="batch-panel" id="batchPanel">
-      <span>선택한 세대들을 일괄적으로 ➔ </span>
+      <span>일괄 변경 ➔ </span>
       <select class="batch-select" id="batchStatusSelect">
         <option value="none">미대상 (초기화)</option>
         <option value="target_pool">작업대상 (인테리어 미실시)</option>
         <option value="target_confirm">작업확정 (공가 및 이사확정)</option>
-        <option value="demolishing">철거공사</option>
-        <option value="phase1">건축공사중</option>
+        <option value="demolishing">해체작업중</option>
+        <option value="phase1">1차작업중</option>
         <option value="done">작업완료</option>
       </select>
       <button class="btn-batch-apply" onclick="applyBatchChange()">⚡ 즉시 반영 및 저장</button>
     </div>
+    <button class="btn-print" onclick="printAllComplexes()">🖨️ 전체 현황 인쇄 / PDF 저장</button>
     <button class="btn-refresh" onclick="manualRefresh()">🔄 수동 새로고침</button>
   </div>
 
-  <div class="complex-tabs" id="complexTabs"></div>
-  <div class="dong-tabs" id="dongTabs"></div>
-
-  <div class="grid-container">
-    <table class="grid-table" id="gridTable"></table>
+  <div id="screenViewZone">
+    <div class="section-title">🏢 [선택 단지 현황] (<span id="currentComplexTitle">전주평화1</span>)</div>
+    <div class="stats-container">
+      <div class="stat-card"> <div class="stat-label">단지 총 세대수</div> <div class="stat-val" id="stTotal">0</div> </div>
+      <div class="stat-card t-pool"> <div class="stat-label">작업대상 (인테리어 미실시)</div> <div class="stat-val" style="color:#f59f00" id="stPool">0</div> </div>
+      <div class="stat-card t-confirm"> <div class="stat-label">작업확정 (공가 및 이사확정)</div> <div class="stat-val" style="color:#e03131" id="stConfirm">0</div> </div>
+      <div class="stat-card demolishing"> <div class="stat-label">해체작업중</div> <div class="stat-val" style="color:#868e96" id="stDemo">0</div> </div>
+      <div class="stat-card phase1"> <div class="stat-label">1차작업중</div> <div class="stat-val" style="color:#f76707" id="stPhase1">0</div> </div>
+      <div class="stat-card done"> <div class="stat-label">작업완료</div> <div class="stat-val" style="color:#37b24d" id="stDone">0</div> </div>
+    </div>
+    <div class="complex-tabs" id="complexTabs"></div>
+    <div class="dong-tabs" id="dongTabs"></div>
+    <div class="grid-container">
+      <table class="grid-table" id="gridTable"></table>
+    </div>
   </div>
+
+  <div id="printOutputZone"></div>
 </div>
 
 <div class="modal-bg" id="modalBg">
@@ -154,8 +177,8 @@
 </div>
 
 <script>
-// ⚠️ 사용 중이신 구글 웹 앱 URL 주소를 아래에 넣어주세요!
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz0TOiIXFV3EMgKmaOW-W6ndqrHlREmvUrdgCZq-0WjQZH2UqYLfOF5tD_5MvbPujSM/exec";
+// ⚠️ 사용 중이신 구글 웹 앱 URL 주소를 아래에 정확히 입력해 주세요!
+const GOOGLE_SCRIPT_URL = "여기에_구글_웹앱_주소를_넣으세요";
 
 const COMPLEXES = {
   "전주평화1": { floors: 15, dongs: { "101동": Array.from({length: 12}, (_, i) => i + 1), "102동": Array.from({length: 20}, (_, i) => i + 1), "103동": Array.from({length: 20}, (_, i) => i + 1), "104동": Array.from({length: 20}, (_, i) => i + 1), "105동": Array.from({length: 20}, (_, i) => i + 1), "106동": Array.from({length: 20}, (_, i) => i + 1) } },
@@ -169,8 +192,8 @@ const STATUSES = [
   { key: 'none', label: '미대상', color: '#fff' },
   { key: 'target_pool', label: '작업대상', color: '#fff9db', border: '#fab005' },
   { key: 'target_confirm', label: '작업확정', color: '#ffe3e3', border: '#e03131' },
-  { key: 'demolishing', label: '철거공사', color: '#f1f3f5', border: '#868e96' },
-  { key: 'phase1', label: '건축공사중', color: '#fff4e6', border: '#f76707' },
+  { key: 'demolishing', label: '해체작업중', color: '#f1f3f5', border: '#868e96' },
+  { key: 'phase1', label: '1차작업중', color: '#fff4e6', border: '#f76707' },
   { key: 'done', label: '작업완료', color: '#ebfbee', border: '#37b24d' }
 ];
 
@@ -194,16 +217,10 @@ function updateTimerDisplay() {
   const tBadge = document.getElementById('autoTimer');
   if (isBatchMode) {
     tBadge.textContent = "⏸️ 일괄 변경 중 (자동 갱신 중지)";
-    tBadge.style.background = "#fff5f5";
-    tBadge.style.color = "#c92a2a";
-    tBadge.style.borderColor = "#ffa8a8";
   } else if (isUpdating) {
     tBadge.textContent = "🔄 실시간 동기화 확인 중...";
   } else {
     tBadge.textContent = `⏱️ ${timeRemaining}초 뒤 자동 새로고침`;
-    tBadge.style.background = "#e8f4fd";
-    tBadge.style.color = "#1d4ed8";
-    tBadge.style.borderColor = "#bfdbfe";
   }
 }
 
@@ -246,21 +263,16 @@ async function loadFromCloud(isBackground = false) {
 
 function manualRefresh() { loadFromCloud(false); }
 
-// 🌐 낙관적 업데이트(Optimistic Update)가 적용된 저장 함수
 async function saveBatchToCloud(updatesArray) {
   if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("여기에") || updatesArray.length === 0) return;
   
-  // [1단계: 낙관적 업데이트] - 구글 서버에 보내기 전, 화면 로컬 데이터에 즉시 0.01초 만에 박아버립니다.
   updatesArray.forEach(item => {
     if (item.status === 'none') delete state[item.key];
     else state[item.key] = item.status;
   });
   
-  // 응답을 안 기다리고 화면을 즉각 새로 그립니다. (체감 속도 0초 구역)
   renderGrid();
   calculateStats();
-  
-  // [2단계: 백그라운드 처리] - 상단 상태창만 바꾸고 서버 통신은 보이지 않게 뒤에서 실행합니다.
   setSyncStatus("⏳ 백그라운드 서버 동기화 중...", "loading");
   isUpdating = true;
   
@@ -300,13 +312,6 @@ function renderDongTabs() {
 
 function renderGrid() {
   const table = document.getElementById('gridTable');
-  const checkedRooms = new Set();
-  if (isBatchMode) {
-    document.querySelectorAll('.u-cb:checked').forEach(cb => {
-      checkedRooms.add(cb.getAttribute('data-room'));
-    });
-  }
-
   table.innerHTML = "";
   const compInfo = COMPLEXES[currentC];
   const lines = compInfo.dongs[currentD];
@@ -324,11 +329,10 @@ function renderGrid() {
       const key = `${currentC}_${currentD}_${roomNum}`;
       const curStatus = state[key] || 'none';
       const statusObj = STATUSES.find(s=>s.key===curStatus) || STATUSES[0];
-      const isChecked = checkedRooms.has(String(roomNum)) ? 'checked' : '';
       
       tr += `<td>
         <button class="u-btn st-${curStatus}" onclick="handleRoomClick(event, '${roomNum}')">
-          <input type="checkbox" class="u-cb" data-room="${roomNum}" ${isChecked} style="display: ${isBatchMode ? 'block' : 'none'}" onclick="event.stopPropagation();">
+          <input type="checkbox" class="u-cb" data-room="${roomNum}" style="display: ${isBatchMode ? 'block' : 'none'}" onclick="event.stopPropagation();">
           <span class="u-num">${roomNum}</span>
           <span class="u-st">${statusObj.label}</span>
         </button>
@@ -371,7 +375,6 @@ async function applyBatchChange() {
     alert('선택된 세대가 없습니다.');
     return;
   }
-  
   const targetStatus = document.getElementById('batchStatusSelect').value;
   const batchUpdates = [];
   checkboxes.forEach(cb => {
@@ -379,8 +382,6 @@ async function applyBatchChange() {
     const key = `${currentC}_${currentD}_${roomNum}`;
     batchUpdates.push({ key: key, status: targetStatus });
   });
-
-  // 누르는 즉시 화면이 바뀌고 서버 저장은 백그라운드에서 실행됨
   toggleBatchMode();
   await saveBatchToCloud(batchUpdates);
 }
@@ -388,7 +389,6 @@ async function applyBatchChange() {
 function calculateStats() {
   let total = 0, pool = 0, confirm = 0, demo = 0, phase1 = 0, done = 0;
   const dongs = COMPLEXES[currentC].dongs;
-  
   for (const d in dongs) {
     dongs[d].forEach(l => {
       for (let f = 1; f <= COMPLEXES[currentC].floors; f++) {
@@ -439,6 +439,74 @@ function calculateStats() {
   document.getElementById('allDemo').textContent = allDemo;
   document.getElementById('allPhase1').textContent = allPhase1;
   document.getElementById('allDone').textContent = allDone;
+}
+
+// 🖨️ [핵심] 모든 단지의 모든 동을 한 번에 그려서 출력하는 핵심 마술 함수
+function printAllComplexes() {
+  const printZone = document.getElementById('printOutputZone');
+  const screenZone = document.getElementById('screenViewZone');
+  
+  // 1. 기존 화면 뷰 영역 잠시 숨김 처리
+  screenZone.style.display = "none";
+  printZone.innerHTML = ""; // 인쇄 내용물 초기화
+
+  // 2. 5개 단지 전체 루프 구동
+  let isFirst = true;
+  for (const cKey in COMPLEXES) {
+    const compInfo = COMPLEXES[cKey];
+    const dongs = compInfo.dongs;
+    const totalFloors = compInfo.floors;
+
+    // 단지명 대제목 추가 (첫 단지가 아니면 인쇄 시 페이지 넘김 강제 적용)
+    const pageBreakClass = isFirst ? "" : "print-page-break";
+    isFirst = false;
+
+    printZone.innerHTML += `<div class="${pageBreakClass}" style="margin-top:20px; border-bottom:3px solid #1a365d; padding-bottom:5px;">
+      <h2 style="font-size:20px; color:#1a365d;">🏢 단지명: ${cKey} (전체 동 일괄 출력)</h2>
+    </div>`;
+
+    // 해당 단지의 모든 동을 하단으로 연속 빌드
+    for (const dKey in dongs) {
+      const lines = dongs[dKey];
+      
+      let html = `<div style="margin: 25px 0; page-break-inside: avoid;">
+        <h3 style="font-size:14px; margin-bottom:8px; color:#495057;">📍 ${dKey} 현황</h3>
+        <table class="grid-table" style="width:100%;">
+          <tr><th style="background:#f1f3f5; font-size:11px; padding:4px;">층</th>`;
+      
+      lines.forEach(l => { html += `<th style="background:#f1f3f5; font-size:11px; padding:4px;">${l}호</th>`; });
+      html += `</tr>`;
+
+      for (let f = totalFloors; f >= 1; f--) {
+        html += `<tr><th style="background:#f1f3f5; font-size:11px; padding:4px; font-weight:bold;">${f}F</th>`;
+        lines.forEach(l => {
+          const roomNum = f * 100 + l;
+          const key = `${cKey}_${dKey}_${roomNum}`;
+          const curStatus = state[key] || 'none';
+          const statusObj = STATUSES.find(s=>s.key===curStatus) || STATUSES[0];
+          
+          html += `<td style="text-align:center;">
+            <div class="u-btn st-${curStatus}" style="width:100%; height:32px; font-size:10px; border:1px solid #dee2e6; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+              <span style="font-weight:bold;">${roomNum}</span>
+              <span style="font-size:8px; opacity:0.8;">${statusObj.label}</span>
+            </div>
+          </td>`;
+        });
+        html += `</tr>`;
+      }
+      html += `</table></div>`;
+      printZone.innerHTML += html;
+    }
+  }
+
+  // 3. 브라우저 실제 인쇄 창 팝업 호출 (이 순간 백그라운드 Print CSS가 동작함)
+  setTimeout(() => {
+    window.print();
+    
+    // 4. 인쇄 완료 혹은 취소 후 다시 웹 화면 모드로 원상복구
+    screenZone.style.display = "block";
+    printZone.innerHTML = "";
+  }, 300);
 }
 
 function changeComplex(c) {
