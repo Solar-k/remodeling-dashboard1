@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <title>2026 노후 공공임대 리모델링 공사 현황 관리자 (실시간 자동 새로고침)</title>
+  <title>2026 노후 공공임대 리모델링 공사 현황 관리자 (초고속 반응 버전)</title>
   <style>
     :root {
       --color-background-primary: #ffffff;
@@ -90,7 +90,7 @@
 
 <div class="wrap">
   <div class="top-bar">
-    <h1>🏢 노후 임대주택 리모델링 현황판 (실시간 자동 새로고침)</h1>
+    <h1>🏢 노후 임대주택 리모델링 현황판 (초고속 반응 버전)</h1>
     <div class="badge-zone">
       <div class="timer-badge" id="autoTimer">⏱️ 자동 동기화 켜짐</div>
       <div class="sync-badge" id="syncStatus">⏳ 서버 연결 중...</div>
@@ -129,7 +129,7 @@
         <option value="phase1">1차작업중</option>
         <option value="done">작업완료</option>
       </select>
-      <button class="btn-batch-apply" onclick="applyBatchChange()">⚡ 초고속 일괄 적용</button>
+      <button class="btn-batch-apply" onclick="applyBatchChange()">⚡ 즉시 반영 및 저장</button>
     </div>
     <button class="btn-refresh" onclick="manualRefresh()">🔄 수동 새로고침</button>
   </div>
@@ -154,7 +154,7 @@
 </div>
 
 <script>
-// ⚠️ 사용 중이신 구글 웹 앱 URL 주소를 아래에 정확히 입력해 주세요!
+// ⚠️ 사용 중이신 구글 웹 앱 URL 주소를 아래에 넣어주세요!
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz0TOiIXFV3EMgKmaOW-W6ndqrHlREmvUrdgCZq-0WjQZH2UqYLfOF5tD_5MvbPujSM/exec";
 
 const COMPLEXES = {
@@ -179,8 +179,7 @@ let currentD = "101동";
 let state = {};
 let isBatchMode = false;
 
-// ⏱️ 자동 동기화용 변수 설정
-const REFRESH_INTERVAL = 10; // 자동 새로고침 간격 (단위: 초)
+const REFRESH_INTERVAL = 12; 
 let timeRemaining = REFRESH_INTERVAL;
 let timerId = null;
 let isUpdating = false;
@@ -191,7 +190,6 @@ function setSyncStatus(text, type) {
   badge.className = "sync-badge " + type;
 }
 
-// ⏱️ 타이머 구동 및 제어 함수
 function updateTimerDisplay() {
   const tBadge = document.getElementById('autoTimer');
   if (isBatchMode) {
@@ -212,27 +210,22 @@ function updateTimerDisplay() {
 function startAutoTimer() {
   if (timerId) clearInterval(timerId);
   timerId = setInterval(() => {
-    if (isBatchMode || isUpdating) return; // 작업 중이거나 통신 중이면 카운트 안 함
-    
+    if (isBatchMode || isUpdating) return;
     timeRemaining--;
     if (timeRemaining <= 0) {
-      loadFromCloud(true); // 자동 백그라운드 갱신
+      loadFromCloud(true);
       timeRemaining = REFRESH_INTERVAL;
     }
     updateTimerDisplay();
   }, 1000);
 }
 
-// 🌐 데이터 로드 함수 (isBackground = true 일 때는 조용히 업데이트)
 async function loadFromCloud(isBackground = false) {
   if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("여기에")) {
     setSyncStatus("⚠️ 구글 시트 URL 주소가 설정되지 않았습니다.", "loading");
     return;
   }
-  
-  if (!isBackground) {
-    setSyncStatus("🔄 클라우드 데이터 동기화 중...", "loading");
-  }
+  if (!isBackground) setSyncStatus("🔄 클라우드 데이터 동기화 중...", "loading");
   isUpdating = true;
   updateTimerDisplay();
 
@@ -240,28 +233,35 @@ async function loadFromCloud(isBackground = false) {
     const res = await fetch(GOOGLE_SCRIPT_URL);
     state = await res.json();
     setSyncStatus("● 클라우드 실시간 동기화됨 (" + new Date().toLocaleTimeString() + ")", "online");
-    
-    // 현재 선택 창 기준으로 테이블과 통계만 부드럽게 새로 고침
     renderGrid();
     calculateStats();
   } catch (e) {
     setSyncStatus("❌ 데이터 실시간 연동 실패", "loading");
   } finally {
     isUpdating = false;
-    timeRemaining = REFRESH_INTERVAL; // 타이머 초기화
+    timeRemaining = REFRESH_INTERVAL;
     updateTimerDisplay();
   }
 }
 
-// 수동 새로고침 버튼 작동
-function manualRefresh() {
-  loadFromCloud(false);
-}
+function manualRefresh() { loadFromCloud(false); }
 
-// 🌐 묶음 단위를 한 번에 보내는 초고속 전송 함수
+// 🌐 낙관적 업데이트(Optimistic Update)가 적용된 저장 함수
 async function saveBatchToCloud(updatesArray) {
   if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("여기에") || updatesArray.length === 0) return;
-  setSyncStatus("⏳ 중앙 서버에 실시간 동기화 중... (" + updatesArray.length + "건)", "loading");
+  
+  // [1단계: 낙관적 업데이트] - 구글 서버에 보내기 전, 화면 로컬 데이터에 즉시 0.01초 만에 박아버립니다.
+  updatesArray.forEach(item => {
+    if (item.status === 'none') delete state[item.key];
+    else state[item.key] = item.status;
+  });
+  
+  // 응답을 안 기다리고 화면을 즉각 새로 그립니다. (체감 속도 0초 구역)
+  renderGrid();
+  calculateStats();
+  
+  // [2단계: 백그라운드 처리] - 상단 상태창만 바꾸고 서버 통신은 보이지 않게 뒤에서 실행합니다.
+  setSyncStatus("⏳ 백그라운드 서버 동기화 중...", "loading");
   isUpdating = true;
   
   try {
@@ -271,18 +271,9 @@ async function saveBatchToCloud(updatesArray) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ updates: updatesArray })
     });
-    
-    // 화면 로컬 데이터 반영
-    updatesArray.forEach(item => {
-      if (item.status === 'none') delete state[item.key];
-      else state[item.key] = item.status;
-    });
-    
-    setSyncStatus("● 초고속 동기화 완료 (" + new Date().toLocaleTimeString() + ")", "online");
-    renderGrid();
-    calculateStats();
+    setSyncStatus("● 클라우드 저장 완료 (" + new Date().toLocaleTimeString() + ")", "online");
   } catch (e) {
-    setSyncStatus("❌ 서버 저장 실패", "loading");
+    setSyncStatus("❌ 일부 데이터 저장 실패 (새로고침 필요)", "loading");
   } finally {
     isUpdating = false;
     timeRemaining = REFRESH_INTERVAL;
@@ -309,8 +300,6 @@ function renderDongTabs() {
 
 function renderGrid() {
   const table = document.getElementById('gridTable');
-  
-  // 체크박스 유실 방지: 일괄 모드일 때는 체크 상태 임시 수집
   const checkedRooms = new Set();
   if (isBatchMode) {
     document.querySelectorAll('.u-cb:checked').forEach(cb => {
@@ -373,7 +362,7 @@ function toggleBatchMode() {
     panel.style.display = "none";
   }
   renderGrid();
-  updateTimerDisplay(); // 타이머 배지 즉시 중단/재개 처리
+  updateTimerDisplay();
 }
 
 async function applyBatchChange() {
@@ -391,10 +380,9 @@ async function applyBatchChange() {
     batchUpdates.push({ key: key, status: targetStatus });
   });
 
-  await saveBatchToCloud(batchUpdates);
-  alert(`${checkboxes.length}개 세대가 성공적으로 저장되었습니다.`);
+  // 누르는 즉시 화면이 바뀌고 서버 저장은 백그라운드에서 실행됨
   toggleBatchMode();
-  loadFromCloud(true);
+  await saveBatchToCloud(batchUpdates);
 }
 
 function calculateStats() {
@@ -494,14 +482,13 @@ function selectStatusOption(key) {
 function closeModal() { document.getElementById('modalBg').style.display = 'none'; }
 
 async function applyModal() {
-  await saveBatchToCloud([{ key: activeRoomKey, status: selectedStatus }]);
   closeModal();
+  await saveBatchToCloud([{ key: activeRoomKey, status: selectedStatus }]);
 }
 
-// 🚀 프로그램 구동부
 renderTabs();
 loadFromCloud(false);
-startAutoTimer(); // 실시간 자동 새로고침 타이머 시작
+startAutoTimer();
 </script>
 </body>
 </html>
