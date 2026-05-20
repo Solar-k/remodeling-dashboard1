@@ -39,6 +39,8 @@
     .batch-panel { display: none; align-items: center; gap: 10px; font-size: 13px; font-weight: 500; color: #495057; }
     .batch-select { padding: 6px 12px; border-radius: 4px; border: 1px solid #ced4da; font-size: 13px; }
     .btn-batch-apply { padding: 6px 14px; background: #1a365d; color: #fff; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
+    .btn-reset-all { margin-left: auto; padding: 8px 14px; background: #f1f3f5; color: #e03131; border: 1px solid #ced4da; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; }
+    .btn-reset-all:hover { background: #ffe3e3; }
 
     .complex-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1rem; padding: 8px; background: #e9ecef; border-radius: 6px; }
     .ctab { font-size: 13px; padding: 8px 16px; border-radius: 4px; border: none; background: #fff; color: var(--color-text-secondary); cursor: pointer; font-weight: 500; transition: all 0.2s; }
@@ -84,8 +86,8 @@
 
 <div class="wrap">
   <div class="top-bar">
-    <h1>🏢 노후 임대주택 리모델링 현황판 (클린 초기화 버전)</h1>
-    <div class="sync-badge" id="syncStatus">● 동기화 준비 완료</div>
+    <h1>🏢 노후 임대주택 리모델링 현황판 (저장 기능 보완판)</h1>
+    <div class="sync-badge" id="syncStatus">● 데이터 로드 완료</div>
   </div>
 
   <div class="section-title">📊 [전체 단지 통합 집계] (5개 단지 총합)</div>
@@ -122,6 +124,7 @@
       </select>
       <button class="btn-batch-apply" onclick="applyBatchChange()">일괄 적용</button>
     </div>
+    <button class="btn-reset-all" onclick="resetAllData()">⚠️ 전체 데이터 초기화</button>
   </div>
 
   <div class="complex-tabs" id="complexTabs"></div>
@@ -218,16 +221,40 @@ let currentD = "101동";
 let state = {};
 let isBatchMode = false;
 
-// ⚠️ 브라우저에 임시 저장되어 있던 기존 세션 상태를 완전히 클리어하고 빈 값으로 리셋
-function initData() {
-  localStorage.removeItem('remo_v4_state'); // 완벽한 초기화 보장
-  state = {};
-  saveState();
+// 💾 기존 데이터를 밀어버리지 않고 안전하게 불러오는 구조로 변경
+function loadState() {
+  const saved = localStorage.getItem('remo_v4_state');
+  if (saved) {
+    try {
+      state = JSON.parse(saved);
+    } catch(e) {
+      state = {};
+    }
+  } else {
+    state = {};
+  }
+  updateSyncBadge();
 }
 
 function saveState() {
   localStorage.setItem('remo_v4_state', JSON.stringify(state));
-  document.getElementById('syncStatus').textContent = "● 시스템 실시간 연동됨 (" + new Date().toLocaleTimeString() + ")";
+  updateSyncBadge();
+}
+
+function updateSyncBadge() {
+  document.getElementById('syncStatus').textContent = "● 시스템 실시간 저장됨 (" + new Date().toLocaleTimeString() + ")";
+}
+
+// 필요할 때 사용자가 직접 누를 수 있는 초기화 버튼 추가
+function resetAllData() {
+  if(confirm('정말로 모든 단지의 현황판 저장 데이터를 깨끗하게 초기화하시겠습니까?')) {
+    localStorage.removeItem('remo_v4_state');
+    state = {};
+    saveState();
+    renderGrid();
+    calculateStats();
+    alert('모든 데이터가 초기화되었습니다.');
+  }
 }
 
 function renderTabs() {
@@ -440,7 +467,8 @@ function applyModal() {
   calculateStats();
 }
 
-initData();
+// 페이지 실행 시 자동 로드
+loadState();
 renderTabs();
 </script>
 </body>
