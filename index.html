@@ -18,7 +18,9 @@
     
     .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; border-bottom: 2px solid var(--color-border-secondary); padding-bottom: 1rem; }
     .top-bar h1 { font-size: 22px; font-weight: bold; color: #1a365d; }
-    .sync-badge { font-size: 12px; padding: 5px 12px; border-radius: 20px; background: #e2f0d9; color: #385723; font-weight: bold; }
+    .sync-badge { font-size: 12px; padding: 5px 12px; border-radius: 20px; background: #edf2f7; color: #495057; font-weight: bold; transition: all 0.3s; }
+    .sync-badge.online { background: #e2f0d9; color: #385723; }
+    .sync-badge.loading { background: #fff3bf; color: #d9480f; }
     
     .section-title { font-size: 14px; font-weight: bold; color: #1a365d; margin: 1.2rem 0 0.5rem 0; display: flex; align-items: center; gap: 5px; }
     
@@ -39,8 +41,7 @@
     .batch-panel { display: none; align-items: center; gap: 10px; font-size: 13px; font-weight: 500; color: #495057; }
     .batch-select { padding: 6px 12px; border-radius: 4px; border: 1px solid #ced4da; font-size: 13px; }
     .btn-batch-apply { padding: 6px 14px; background: #1a365d; color: #fff; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
-    .btn-reset-all { margin-left: auto; padding: 8px 14px; background: #f1f3f5; color: #e03131; border: 1px solid #ced4da; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; }
-    .btn-reset-all:hover { background: #ffe3e3; }
+    .btn-refresh { margin-left: auto; padding: 8px 14px; background: #fff; color: #1a365d; border: 1px solid #1a365d; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; }
 
     .complex-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1rem; padding: 8px; background: #e9ecef; border-radius: 6px; }
     .ctab { font-size: 13px; padding: 8px 16px; border-radius: 4px; border: none; background: #fff; color: var(--color-text-secondary); cursor: pointer; font-weight: 500; transition: all 0.2s; }
@@ -86,8 +87,8 @@
 
 <div class="wrap">
   <div class="top-bar">
-    <h1>🏢 노후 임대주택 리모델링 현황판 (저장 기능 보완판)</h1>
-    <div class="sync-badge" id="syncStatus">● 데이터 로드 완료</div>
+    <h1>🏢 노후 임대주택 리모델링 현황판 (실시간 다중 접속 버전)</h1>
+    <div class="sync-badge" id="syncStatus">⏳ 서버 연결 중...</div>
   </div>
 
   <div class="section-title">📊 [전체 단지 통합 집계] (5개 단지 총합)</div>
@@ -124,7 +125,7 @@
       </select>
       <button class="btn-batch-apply" onclick="applyBatchChange()">일괄 적용</button>
     </div>
-    <button class="btn-reset-all" onclick="resetAllData()">⚠️ 전체 데이터 초기화</button>
+    <button class="btn-refresh" onclick="loadFromCloud()">🔄 원격 새로고침</button>
   </div>
 
   <div class="complex-tabs" id="complexTabs"></div>
@@ -147,64 +148,16 @@
 </div>
 
 <script>
+// ⚠️ 1단계에서 획득한 구글 웹 앱 URL 주소를 아래 큰따옴표 안에 넣어주세요!
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyRaU-nxcKnM_r-QJxR9O537OdieCfFwsQQichD8ZWJDB7edutjJ9lDaAJ9ryOadA4Svg/exec
+";
+
 const COMPLEXES = {
-  "전주평화1": {
-    floors: 15,
-    dongs: {
-      "101동": Array.from({length: 12}, (_, i) => i + 1),
-      "102동": Array.from({length: 20}, (_, i) => i + 1),
-      "103동": Array.from({length: 20}, (_, i) => i + 1),
-      "104동": Array.from({length: 20}, (_, i) => i + 1),
-      "105동": Array.from({length: 20}, (_, i) => i + 1),
-      "106동": Array.from({length: 20}, (_, i) => i + 1)
-    }
-  },
-  "전주평화4": {
-    floors: 15,
-    dongs: {
-      "401동": Array.from({length: 10}, (_, i) => i + 1),
-      "402동": Array.from({length: 10}, (_, i) => i + 1),
-      "403동": Array.from({length: 10}, (_, i) => i + 1),
-      "404동": Array.from({length: 10}, (_, i) => i + 1),
-      "405동": Array.from({length: 16}, (_, i) => i + 1),
-      "406동": Array.from({length: 10}, (_, i) => i + 1),
-      "407동": Array.from({length: 16}, (_, i) => i + 1)
-    }
-  },
-  "익산부송1": {
-    floors: 15,
-    dongs: {
-      "101동": Array.from({length: 10}, (_, i) => i + 1),
-      "102동": Array.from({length: 10}, (_, i) => i + 1),
-      "103동": Array.from({length: 16}, (_, i) => i + 1),
-      "104동": Array.from({length: 16}, (_, i) => i + 1),
-      "105동": Array.from({length: 16}, (_, i) => i + 1),
-      "106동": Array.from({length: 24}, (_, i) => i + 1),
-      "107동": Array.from({length: 16}, (_, i) => i + 1)
-    }
-  },
-  "익산동산1": {
-    floors: 15,
-    dongs: {
-      "101동": Array.from({length: 10}, (_, i) => i + 1),
-      "102동": Array.from({length: 10}, (_, i) => i + 1),
-      "103동": Array.from({length: 10}, (_, i) => i + 1),
-      "104동": Array.from({length: 16}, (_, i) => i + 1)
-    }
-  },
-  "군산나운4": {
-    floors: 15,
-    dongs: {
-      "401동": Array.from({length: 10}, (_, i) => i + 1),
-      "402동": Array.from({length: 24}, (_, i) => i + 1),
-      "403동": Array.from({length: 24}, (_, i) => i + 1),
-      "404동": Array.from({length: 10}, (_, i) => i + 1),
-      "405동": Array.from({length: 10}, (_, i) => i + 1),
-      "406동": Array.from({length: 24}, (_, i) => i + 1),
-      "407동": Array.from({length: 16}, (_, i) => i + 1),
-      "408동": Array.from({length: 16}, (_, i) => i + 1)
-    }
-  }
+  "전주평화1": { floors: 15, dongs: { "101동": Array.from({length: 12}, (_, i) => i + 1), "102동": Array.from({length: 20}, (_, i) => i + 1), "103동": Array.from({length: 20}, (_, i) => i + 1), "104동": Array.from({length: 20}, (_, i) => i + 1), "105동": Array.from({length: 20}, (_, i) => i + 1), "106동": Array.from({length: 20}, (_, i) => i + 1) } },
+  "전주평화4": { floors: 15, dongs: { "401동": Array.from({length: 10}, (_, i) => i + 1), "402동": Array.from({length: 10}, (_, i) => i + 1), "403동": Array.from({length: 10}, (_, i) => i + 1), "404동": Array.from({length: 10}, (_, i) => i + 1), "405동": Array.from({length: 16}, (_, i) => i + 1), "406동": Array.from({length: 10}, (_, i) => i + 1), "407동": Array.from({length: 16}, (_, i) => i + 1) } },
+  "익산부송1": { floors: 15, dongs: { "101동": Array.from({length: 10}, (_, i) => i + 1), "102동": Array.from({length: 10}, (_, i) => i + 1), "103동": Array.from({length: 16}, (_, i) => i + 1), "104동": Array.from({length: 16}, (_, i) => i + 1), "105동": Array.from({length: 16}, (_, i) => i + 1), "106동": Array.from({length: 24}, (_, i) => i + 1), "107동": Array.from({length: 16}, (_, i) => i + 1) } },
+  "익산동산1": { floors: 15, dongs: { "101동": Array.from({length: 10}, (_, i) => i + 1), "102동": Array.from({length: 10}, (_, i) => i + 1), "103동": Array.from({length: 10}, (_, i) => i + 1), "104동": Array.from({length: 16}, (_, i) => i + 1) } },
+  "군산나운4": { floors: 15, dongs: { "401동": Array.from({length: 10}, (_, i) => i + 1), "402동": Array.from({length: 24}, (_, i) => i + 1), "403동": Array.from({length: 24}, (_, i) => i + 1), "404동": Array.from({length: 10}, (_, i) => i + 1), "405동": Array.from({length: 10}, (_, i) => i + 1), "406동": Array.from({length: 24}, (_, i) => i + 1), "407동": Array.from({length: 16}, (_, i) => i + 1), "408동": Array.from({length: 16}, (_, i) => i + 1) } }
 };
 
 const STATUSES = [
@@ -221,39 +174,50 @@ let currentD = "101동";
 let state = {};
 let isBatchMode = false;
 
-// 💾 기존 데이터를 밀어버리지 않고 안전하게 불러오는 구조로 변경
-function loadState() {
-  const saved = localStorage.getItem('remo_v4_state');
-  if (saved) {
-    try {
-      state = JSON.parse(saved);
-    } catch(e) {
-      state = {};
-    }
-  } else {
-    state = {};
+function setSyncStatus(text, type) {
+  const badge = document.getElementById('syncStatus');
+  badge.textContent = text;
+  badge.className = "sync-badge " + type;
+}
+
+// 🌐 구글 스프레드시트 서버로부터 실시간 통합 데이터 가져오기
+async function loadFromCloud() {
+  if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("여기에")) {
+    setSyncStatus("⚠️ 구글 시트 URL 주소가 설정되지 않았습니다.", "loading");
+    return;
   }
-  updateSyncBadge();
-}
-
-function saveState() {
-  localStorage.setItem('remo_v4_state', JSON.stringify(state));
-  updateSyncBadge();
-}
-
-function updateSyncBadge() {
-  document.getElementById('syncStatus').textContent = "● 시스템 실시간 저장됨 (" + new Date().toLocaleTimeString() + ")";
-}
-
-// 필요할 때 사용자가 직접 누를 수 있는 초기화 버튼 추가
-function resetAllData() {
-  if(confirm('정말로 모든 단지의 현황판 저장 데이터를 깨끗하게 초기화하시겠습니까?')) {
-    localStorage.removeItem('remo_v4_state');
-    state = {};
-    saveState();
+  setSyncStatus("🔄 클라우드 데이터 동기화 중...", "loading");
+  try {
+    const res = await fetch(GOOGLE_SCRIPT_URL);
+    state = await res.json();
+    setSyncStatus("● 클라우드 실시간 동기화됨 (" + new Date().toLocaleTimeString() + ")", "online");
     renderGrid();
     calculateStats();
-    alert('모든 데이터가 초기화되었습니다.');
+  } catch (e) {
+    setSyncStatus("❌ 데이터 불러오기 실패", "loading");
+  }
+}
+
+// 🌐 구글 스프레드시트 서버로 데이터 전송 및 저장하기
+async function saveToCloud(key, status) {
+  if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("여기에")) return;
+  setSyncStatus("⏳ 중앙 서버에 저장 중...", "loading");
+  try {
+    await fetch(GOOGLE_SCRIPT_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: key, status: status })
+    });
+    // no-cors 특성상 전송 후 즉시 로컬 데이터 최신화 후 표시
+    if (status === 'none') delete state[key];
+    else state[key] = status;
+    
+    setSyncStatus("● 서버 저장 완료 (" + new Date().toLocaleTimeString() + ")", "online");
+    renderGrid();
+    calculateStats();
+  } catch (e) {
+    setSyncStatus("❌ 서버 저장 실패", "loading");
   }
 }
 
@@ -321,7 +285,6 @@ function toggleBatchMode() {
   isBatchMode = !isBatchMode;
   const btn = document.getElementById('btnBatchMode');
   const panel = document.getElementById('batchPanel');
-  
   if (isBatchMode) {
     btn.textContent = "🛑 일괄 변경 모드 끄기";
     btn.classList.add('active');
@@ -334,7 +297,7 @@ function toggleBatchMode() {
   renderGrid();
 }
 
-function applyBatchChange() {
+async function applyBatchChange() {
   const checkboxes = document.querySelectorAll('.u-cb:checked');
   if (checkboxes.length === 0) {
     alert('선택된 세대가 없습니다.');
@@ -342,20 +305,17 @@ function applyBatchChange() {
   }
   
   const targetStatus = document.getElementById('batchStatusSelect').value;
-  checkboxes.forEach(cb => {
+  setSyncStatus("⏳ 일괄 수량 동기화 중...", "loading");
+  
+  for (let cb of checkboxes) {
     const roomNum = cb.getAttribute('data-room');
     const key = `${currentC}_${currentD}_${roomNum}`;
-    if (targetStatus === 'none') {
-      delete state[key];
-    } else {
-      state[key] = targetStatus;
-    }
-  });
+    await saveToCloud(key, targetStatus);
+  }
 
-  saveState();
-  alert(`${checkboxes.length}개 세대가 일괄 변경되었습니다.`);
+  alert(`${checkboxes.length}개 세대의 일괄 서버 저장이 처리되었습니다.`);
   toggleBatchMode();
-  calculateStats();
+  loadFromCloud();
 }
 
 function calculateStats() {
@@ -386,7 +346,6 @@ function calculateStats() {
   document.getElementById('stDone').textContent = done;
 
   let allTotal = 0, allPool = 0, allConfirm = 0, allDemo = 0, allPhase1 = 0, allDone = 0;
-  
   for (const cKey in COMPLEXES) {
     const cDongs = COMPLEXES[cKey].dongs;
     const cFloors = COMPLEXES[cKey].floors;
@@ -456,20 +415,13 @@ function selectStatusOption(key) {
 function closeModal() { document.getElementById('modalBg').style.display = 'none'; }
 
 function applyModal() {
-  if (selectedStatus === 'none') {
-    delete state[activeRoomKey];
-  } else {
-    state[activeRoomKey] = selectedStatus;
-  }
-  saveState();
+  saveToCloud(activeRoomKey, selectedStatus);
   closeModal();
-  renderGrid();
-  calculateStats();
 }
 
-// 페이지 실행 시 자동 로드
-loadState();
+// 초기 로딩 시 원격 서버 데이터 가져오기 실행
 renderTabs();
+loadFromCloud();
 </script>
 </body>
 </html>
