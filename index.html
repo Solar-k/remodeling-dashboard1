@@ -102,8 +102,8 @@
     <div class="stat-card t-total"> <div class="stat-label">전체 총 세대수</div> <div class="stat-val" id="allTotal">0</div> </div>
     <div class="stat-card t-pool"> <div class="stat-label">전체 작업대상</div> <div class="stat-val" style="color:#f59f00" id="allPool">0</div> </div>
     <div class="stat-card t-confirm"> <div class="stat-label">전체 작업확정</div> <div class="stat-val" style="color:#e03131" id="allConfirm">0</div> </div>
-    <div class="stat-card demolishing"> <div class="stat-label">전체 해체작업중</div> <div class="stat-val" style="color:#868e96" id="allDemo">0</div> </div>
-    <div class="stat-card phase1"> <div class="stat-label">전체 1차작업중</div> <div class="stat-val" style="color:#f76707" id="allPhase1">0</div> </div>
+    <div class="stat-card demolishing"> <div class="stat-label">전체 철거공사</div> <div class="stat-val" style="color:#868e96" id="allDemo">0</div> </div>
+    <div class="stat-card phase1"> <div class="stat-label">전체 건축공사중</div> <div class="stat-val" style="color:#f76707" id="allPhase1">0</div> </div>
     <div class="stat-card done"> <div class="stat-label">전체 작업완료</div> <div class="stat-val" style="color:#37b24d" id="allDone">0</div> </div>
   </div>
 
@@ -112,8 +112,8 @@
     <div class="stat-card"> <div class="stat-label">단지 총 세대수</div> <div class="stat-val" id="stTotal">0</div> </div>
     <div class="stat-card t-pool"> <div class="stat-label">작업대상 (후보)</div> <div class="stat-val" style="color:#f59f00" id="stPool">0</div> </div>
     <div class="stat-card t-confirm"> <div class="stat-label">작업확정 (공가 및 이사확정)</div> <div class="stat-val" style="color:#e03131" id="stConfirm">0</div> </div>
-    <div class="stat-card demolishing"> <div class="stat-label">해체작업중</div> <div class="stat-val" style="color:#868e96" id="stDemo">0</div> </div>
-    <div class="stat-card phase1"> <div class="stat-label">1차작업중</div> <div class="stat-val" style="color:#f76707" id="stPhase1">0</div> </div>
+    <div class="stat-card demolishing"> <div class="stat-label">철거공사</div> <div class="stat-val" style="color:#868e96" id="stDemo">0</div> </div>
+    <div class="stat-card phase1"> <div class="stat-label">건축공사중</div> <div class="stat-val" style="color:#f76707" id="stPhase1">0</div> </div>
     <div class="stat-card done"> <div class="stat-label">작업완료</div> <div class="stat-val" style="color:#37b24d" id="stDone">0</div> </div>
   </div>
 
@@ -125,8 +125,8 @@
         <option value="none">미대상 (초기화)</option>
         <option value="target_pool">작업대상 (후보)</option>
         <option value="target_confirm">작업확정 (공가 및 이사확정)</option>
-        <option value="demolishing">해체작업중</option>
-        <option value="phase1">1차작업중</option>
+        <option value="demolishing">철거공사</option>
+        <option value="phase1">건축공사중</option>
         <option value="done">작업완료</option>
       </select>
       <button class="btn-batch-apply" onclick="applyBatchChange()">⚡ 즉시 반영 및 저장</button>
@@ -169,8 +169,8 @@ const STATUSES = [
   { key: 'none', label: '미대상', color: '#fff' },
   { key: 'target_pool', label: '작업대상', color: '#fff9db', border: '#fab005' },
   { key: 'target_confirm', label: '작업확정', color: '#ffe3e3', border: '#e03131' },
-  { key: 'demolishing', label: '해체작업중', color: '#f1f3f5', border: '#868e96' },
-  { key: 'phase1', label: '1차작업중', color: '#fff4e6', border: '#f76707' },
+  { key: 'demolishing', label: '철거공사', color: '#f1f3f5', border: '#868e96' },
+  { key: 'phase1', label: '건축공사중', color: '#fff4e6', border: '#f76707' },
   { key: 'done', label: '작업완료', color: '#ebfbee', border: '#37b24d' }
 ];
 
