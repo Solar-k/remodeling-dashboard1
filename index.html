@@ -257,6 +257,7 @@
 
   <div class="section-title">📊 [전체 단지 통합 집계] (5개 단지 총합)</div>
   <div class="stats-container" id="totalStatsZone">
+    <div class="stat-card t-total"><div class="stat-label">전체 총 세대수</div><div class="stat-val" id="allTotal">0</div></div>
     <div class="stat-card t-confirm"><div class="stat-label">작업확정(공가 및 이사확정)</div><div class="stat-val" style="color:#e03131" id="allConfirm">0</div></div>
     <div class="stat-card demo1"><div class="stat-label">1차철거</div><div class="stat-val" style="color:#8f5b00" id="allDemo1">0</div></div>
     <div class="stat-card asbestos"><div class="stat-label">석면철거</div><div class="stat-val" style="color:#6741d9" id="allAsbestos">0</div></div>
@@ -629,6 +630,7 @@ function calculateStats() {
     const x = countComplex(cKey);
     Object.keys(all).forEach(k => all[k] += x[k]);
   }
+  document.getElementById('allTotal').textContent = all.total;
   document.getElementById('allConfirm').textContent = all.target_confirm;
   document.getElementById('allDemo1').textContent = all.demo1;
   document.getElementById('allAsbestos').textContent = all.asbestos;
