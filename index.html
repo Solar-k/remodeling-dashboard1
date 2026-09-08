@@ -29,7 +29,7 @@
     .stat-card { background: var(--color-background-secondary); border: 1px solid var(--color-border-secondary); padding: 10px 12px; border-radius: 6px; text-align: center; }
     .stat-card.t-total { border-left: 5px solid #1a365d; background: #edf2f7; }
     .stat-card.t-confirm { border-left: 5px solid #e03131; }
-    .stat-card.demo1 { border-left: 5px solid #868e96; }
+    .stat-card.demo1 { border-left: 5px solid #f59f00; }
     .stat-card.asbestos { border-left: 5px solid #7048e8; }
     .stat-card.demo2 { border-left: 5px solid #1c7ed6; }
     .stat-card.finish1 { border-left: 5px solid #f76707; }
@@ -64,7 +64,7 @@
     /* 새 6단계 공사 상태 */
     .st-none { background: #ffffff; color: #adb5bd; }
     .st-target_confirm { background: #ffe3e3; color: #e03131; border: 2px solid #e03131; font-weight: bold; }
-    .st-demo1 { background: #f1f3f5; color: #495057; border: 2px solid #868e96; }
+    .st-demo1 { background: #fff9db; color: #8f5b00; border: 2px solid #f59f00; }
     .st-asbestos { background: #f3f0ff; color: #6741d9; border: 2px solid #7048e8; }
     .st-demo2 { background: #e7f5ff; color: #1864ab; border: 2px solid #1c7ed6; }
     .st-finish1 { background: #fff4e6; color: #d9480f; border: 2px solid #f76707; }
@@ -142,9 +142,38 @@
         text-align: center;
       }
 
+      .print-dong-page {
+        width: 100%;
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+      .print-report-header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 10px;
+        border-bottom: 2px solid #1a365d;
+        padding: 0 0 4px 0;
+        margin-bottom: 5px;
+      }
+      .print-report-header h2 {
+        margin: 0;
+        color: #1a365d;
+        font-size: 15px;
+      }
+      .print-report-kicker {
+        font-size: 7px;
+        color: #6b7280;
+        margin-bottom: 1px;
+      }
+      .print-report-date {
+        font-size: 7px;
+        color: #6b7280;
+        white-space: nowrap;
+      }
       .print-dong-block {
         width: 100%;
-        margin: 7px 0 10px 0 !important;
+        margin: 5px 0 0 0 !important;
         page-break-inside: avoid;
         break-inside: avoid;
       }
@@ -201,7 +230,7 @@
 
       .st-none { background: #fff !important; }
       .st-target_confirm { background: #ffe3e3 !important; }
-      .st-demo1 { background: #f1f3f5 !important; }
+      .st-demo1 { background: #fff9db !important; }
       .st-asbestos { background: #f3f0ff !important; }
       .st-demo2 { background: #e7f5ff !important; }
       .st-finish1 { background: #fff4e6 !important; }
@@ -222,12 +251,12 @@
   <div class="section-title">📊 [전체 단지 통합 집계] (5개 단지 총합)</div>
   <div class="stats-container" id="totalStatsZone">
     <div class="stat-card t-total"><div class="stat-label">전체 총 세대수</div><div class="stat-val" id="allTotal">0</div></div>
-    <div class="stat-card t-confirm"><div class="stat-label">전체 작업확정(공가 및 이사확정)</div><div class="stat-val" style="color:#e03131" id="allConfirm">0</div></div>
-    <div class="stat-card demo1"><div class="stat-label">전체 1차철거</div><div class="stat-val" style="color:#495057" id="allDemo1">0</div></div>
-    <div class="stat-card asbestos"><div class="stat-label">전체 석면철거</div><div class="stat-val" style="color:#6741d9" id="allAsbestos">0</div></div>
-    <div class="stat-card demo2"><div class="stat-label">전체 2차철거</div><div class="stat-val" style="color:#1864ab" id="allDemo2">0</div></div>
-    <div class="stat-card finish1"><div class="stat-label">전체 1차마감</div><div class="stat-val" style="color:#d9480f" id="allFinish1">0</div></div>
-    <div class="stat-card finish2"><div class="stat-label">전체 2차마감</div><div class="stat-val" style="color:#2b8a3e" id="allFinish2">0</div></div>
+    <div class="stat-card t-confirm"><div class="stat-label">작업확정(공가 및 이사확정)</div><div class="stat-val" style="color:#e03131" id="allConfirm">0</div></div>
+    <div class="stat-card demo1"><div class="stat-label">1차철거</div><div class="stat-val" style="color:#8f5b00" id="allDemo1">0</div></div>
+    <div class="stat-card asbestos"><div class="stat-label">석면철거</div><div class="stat-val" style="color:#6741d9" id="allAsbestos">0</div></div>
+    <div class="stat-card demo2"><div class="stat-label">2차철거</div><div class="stat-val" style="color:#1864ab" id="allDemo2">0</div></div>
+    <div class="stat-card finish1"><div class="stat-label">1차마감</div><div class="stat-val" style="color:#d9480f" id="allFinish1">0</div></div>
+    <div class="stat-card finish2"><div class="stat-label">2차마감</div><div class="stat-val" style="color:#2b8a3e" id="allFinish2">0</div></div>
   </div>
 
   <div class="control-bar">
@@ -254,7 +283,7 @@
     <div class="stats-container">
       <div class="stat-card"><div class="stat-label">단지 총 세대수</div><div class="stat-val" id="stTotal">0</div></div>
       <div class="stat-card t-confirm"><div class="stat-label">작업확정 (공가 및 이사확정)</div><div class="stat-val" style="color:#e03131" id="stConfirm">0</div></div>
-      <div class="stat-card demo1"><div class="stat-label">1차철거</div><div class="stat-val" style="color:#495057" id="stDemo1">0</div></div>
+      <div class="stat-card demo1"><div class="stat-label">1차철거</div><div class="stat-val" style="color:#8f5b00" id="stDemo1">0</div></div>
       <div class="stat-card asbestos"><div class="stat-label">석면철거</div><div class="stat-val" style="color:#6741d9" id="stAsbestos">0</div></div>
       <div class="stat-card demo2"><div class="stat-label">2차철거</div><div class="stat-val" style="color:#1864ab" id="stDemo2">0</div></div>
       <div class="stat-card finish1"><div class="stat-label">1차마감</div><div class="stat-val" style="color:#d9480f" id="stFinish1">0</div></div>
@@ -295,7 +324,7 @@ const COMPLEXES = {
 const STATUSES = [
   { key: 'none', label: '미대상', color: '#fff' },
   { key: 'target_confirm', label: '작업확정', color: '#ffe3e3', border: '#e03131' },
-  { key: 'demo1', label: '1차철거', color: '#f1f3f5', border: '#868e96' },
+  { key: 'demo1', label: '1차철거', color: '#fff9db', border: '#f59f00' },
   { key: 'asbestos', label: '석면철거', color: '#f3f0ff', border: '#7048e8' },
   { key: 'demo2', label: '2차철거', color: '#e7f5ff', border: '#1c7ed6' },
   { key: 'finish1', label: '1차마감', color: '#fff4e6', border: '#f76707' },
@@ -521,6 +550,21 @@ function emptyCounts() {
   return { total: 0, target_confirm: 0, demo1: 0, asbestos: 0, demo2: 0, finish1: 0, finish2: 0 };
 }
 
+function countDong(cKey, dKey) {
+  const counts = emptyCounts();
+  const comp = COMPLEXES[cKey];
+  const lines = comp.dongs[dKey];
+  lines.forEach(l => {
+    for (let f = 1; f <= comp.floors; f++) {
+      counts.total++;
+      const key = `${cKey}_${dKey}_${f * 100 + l}`;
+      const st = normalizeStatus(state[key]);
+      if (counts[st] !== undefined && st !== 'none') counts[st]++;
+    }
+  });
+  return counts;
+}
+
 function countComplex(cKey) {
   const counts = emptyCounts();
   const comp = COMPLEXES[cKey];
@@ -568,42 +612,71 @@ function printAllComplexes() {
   screenZone.style.display = "none";
   printZone.innerHTML = "";
 
-  let isFirst = true;
+  let isFirstPage = true;
+
   for (const cKey in COMPLEXES) {
     const compInfo = COMPLEXES[cKey];
     const dongs = compInfo.dongs;
     const totalFloors = compInfo.floors;
-    const c = countComplex(cKey);
-
-    const pageBreakClass = isFirst ? "" : "print-page-break";
-    isFirst = false;
-
-    let htmlContent = `
-      <div class="${pageBreakClass}" style="margin-top:20px; border-bottom:3px solid #1a365d; padding-bottom:5px;">
-        <h2 style="font-size:20px; color:#1a365d;">🏢 단지명: ${cKey} (전체 동 리포트)</h2>
-      </div>
-      <div class="p-stats-grid">
-        <div class="p-stat-card" style="border-left:5px solid #1a365d; background:#edf2f7;"><div style="font-size:9px;color:#555;">총 세대수</div><div style="font-size:14px;font-weight:bold;">${c.total}</div></div>
-        <div class="p-stat-card" style="border-left:5px solid #e03131; background:#ffe3e3;"><div style="font-size:9px;color:#555;">작업확정</div><div style="font-size:14px;font-weight:bold;color:#e03131;">${c.target_confirm}</div></div>
-        <div class="p-stat-card" style="border-left:5px solid #868e96; background:#f1f3f5;"><div style="font-size:9px;color:#555;">1차철거</div><div style="font-size:14px;font-weight:bold;color:#495057;">${c.demo1}</div></div>
-        <div class="p-stat-card" style="border-left:5px solid #7048e8; background:#f3f0ff;"><div style="font-size:9px;color:#555;">석면철거</div><div style="font-size:14px;font-weight:bold;color:#6741d9;">${c.asbestos}</div></div>
-        <div class="p-stat-card" style="border-left:5px solid #1c7ed6; background:#e7f5ff;"><div style="font-size:9px;color:#555;">2차철거</div><div style="font-size:14px;font-weight:bold;color:#1864ab;">${c.demo2}</div></div>
-        <div class="p-stat-card" style="border-left:5px solid #f76707; background:#fff4e6;"><div style="font-size:9px;color:#555;">1차마감</div><div style="font-size:14px;font-weight:bold;color:#d9480f;">${c.finish1}</div></div>
-        <div class="p-stat-card" style="border-left:5px solid #37b24d; background:#ebfbee;"><div style="font-size:9px;color:#555;">2차마감</div><div style="font-size:14px;font-weight:bold;color:#2b8a3e;">${c.finish2}</div></div>
-      </div>`;
 
     for (const dKey in dongs) {
       const lines = dongs[dKey];
+      const c = countDong(cKey, dKey);
       const densityClass = lines.length >= 24 ? 'print-grid-24'
                          : lines.length >= 20 ? 'print-grid-20'
                          : lines.length >= 16 ? 'print-grid-16'
                          : '';
-      htmlContent += `<div class="print-dong-block">
-        <h3 style="color:#495057;">📍 ${dKey} 세대별 세부현황</h3>
-        <table class="grid-table ${densityClass}">
-          <tr><th style="background:#f1f3f5;">층</th>`;
+      const pageBreakClass = isFirstPage ? "" : "print-page-break";
+      isFirstPage = false;
 
-      lines.forEach(l => { htmlContent += `<th style="background:#f1f3f5;">${l}호</th>`; });
+      let htmlContent = `
+        <section class="${pageBreakClass} print-dong-page">
+          <div class="print-report-header">
+            <div>
+              <div class="print-report-kicker">2026 LH 공공임대 리모델링 5권역</div>
+              <h2>🏢 ${cKey} · ${dKey} 공정 리포트</h2>
+            </div>
+            <div class="print-report-date">${new Date().toLocaleDateString('ko-KR')}</div>
+          </div>
+
+          <div class="p-stats-grid">
+            <div class="p-stat-card" style="border-left:5px solid #1a365d; background:#edf2f7;">
+              <div style="font-size:9px;color:#555;">총 세대수</div>
+              <div style="font-size:14px;font-weight:bold;">${c.total}</div>
+            </div>
+            <div class="p-stat-card" style="border-left:5px solid #e03131; background:#ffe3e3;">
+              <div style="font-size:9px;color:#555;">작업확정</div>
+              <div style="font-size:14px;font-weight:bold;color:#e03131;">${c.target_confirm}</div>
+            </div>
+            <div class="p-stat-card" style="border-left:5px solid #f59f00; background:#fff9db;">
+              <div style="font-size:9px;color:#555;">1차철거</div>
+              <div style="font-size:14px;font-weight:bold;color:#8f5b00;">${c.demo1}</div>
+            </div>
+            <div class="p-stat-card" style="border-left:5px solid #7048e8; background:#f3f0ff;">
+              <div style="font-size:9px;color:#555;">석면철거</div>
+              <div style="font-size:14px;font-weight:bold;color:#6741d9;">${c.asbestos}</div>
+            </div>
+            <div class="p-stat-card" style="border-left:5px solid #1c7ed6; background:#e7f5ff;">
+              <div style="font-size:9px;color:#555;">2차철거</div>
+              <div style="font-size:14px;font-weight:bold;color:#1864ab;">${c.demo2}</div>
+            </div>
+            <div class="p-stat-card" style="border-left:5px solid #f76707; background:#fff4e6;">
+              <div style="font-size:9px;color:#555;">1차마감</div>
+              <div style="font-size:14px;font-weight:bold;color:#d9480f;">${c.finish1}</div>
+            </div>
+            <div class="p-stat-card" style="border-left:5px solid #37b24d; background:#ebfbee;">
+              <div style="font-size:9px;color:#555;">2차마감</div>
+              <div style="font-size:14px;font-weight:bold;color:#2b8a3e;">${c.finish2}</div>
+            </div>
+          </div>
+
+          <div class="print-dong-block">
+            <table class="grid-table ${densityClass}">
+              <tr><th style="background:#f1f3f5;">층</th>`;
+
+      lines.forEach(l => {
+        htmlContent += `<th style="background:#f1f3f5;">${l}호</th>`;
+      });
       htmlContent += `</tr>`;
 
       for (let f = totalFloors; f >= 1; f--) {
@@ -622,10 +695,14 @@ function printAllComplexes() {
         });
         htmlContent += `</tr>`;
       }
-      htmlContent += `</table></div>`;
-    }
 
-    printZone.innerHTML += htmlContent;
+      htmlContent += `
+            </table>
+          </div>
+        </section>`;
+
+      printZone.innerHTML += htmlContent;
+    }
   }
 
   setTimeout(() => {
@@ -634,7 +711,6 @@ function printAllComplexes() {
     printZone.innerHTML = "";
   }, 300);
 }
-
 function changeComplex(c) {
   currentC = c;
   currentD = Object.keys(COMPLEXES[c].dongs)[0];
