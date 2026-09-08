@@ -49,7 +49,12 @@
     .complex-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1rem; padding: 8px; background: #e9ecef; border-radius: 6px; }
     .ctab { font-size: 13px; padding: 8px 16px; border-radius: 4px; border: none; background: #fff; color: var(--color-text-secondary); cursor: pointer; font-weight: 500; transition: all 0.2s; }
     .ctab.active { background: #1a365d; color: #fff; }
-    .dong-tabs { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 1.5rem; border-bottom: 1px solid var(--color-border-secondary); padding-bottom: 8px; }
+    .dong-tabs { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 0.8rem; border-bottom: 1px solid var(--color-border-secondary); padding-bottom: 8px; }
+    .dong-summary-panel { margin: 0 0 1.2rem 0; padding: 12px; background: #f8fafc; border: 1px solid #dbe4ee; border-radius: 8px; }
+    .dong-summary-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+    .dong-summary-title { margin: 0 !important; }
+    .dong-summary-note { font-size: 11px; color: #6b7280; white-space: nowrap; }
+    .dong-stats-container { margin-bottom: 0; }
     .dtab { font-size: 13px; padding: 6px 12px; border: 1px solid var(--color-border-secondary); background: #fff; border-radius: 4px; cursor: pointer; }
     .dtab.active { background: #495057; color: #fff; border-color: #495057; }
     .grid-container { overflow-x: auto; margin-top: 1rem; background: #fff; border: 1px solid var(--color-border-secondary); border-radius: 6px; padding: 1rem; }
@@ -89,6 +94,8 @@
       .top-bar { align-items: flex-start; flex-direction: column; }
       .badge-zone { justify-content: flex-start; }
       .btn-refresh { margin-left: 0; }
+      .dong-summary-head { align-items: flex-start; flex-direction: column; gap: 3px; }
+      .dong-summary-note { white-space: normal; }
     }
 
     @page {
@@ -119,7 +126,7 @@
         max-width: none !important;
         overflow: visible !important;
       }
-      .control-bar, .complex-tabs, .dong-tabs, .badge-zone, .btn-refresh { display: none !important; }
+      .control-bar, .complex-tabs, .dong-tabs, .dong-summary-panel, .badge-zone, .btn-refresh { display: none !important; }
       .print-page-break { break-before: page; page-break-before: always; }
       .grid-container { border: none; padding: 0; overflow: visible; }
 
@@ -291,6 +298,23 @@
     </div>
     <div class="complex-tabs" id="complexTabs"></div>
     <div class="dong-tabs" id="dongTabs"></div>
+
+    <div class="dong-summary-panel">
+      <div class="dong-summary-head">
+        <div class="section-title dong-summary-title">📍 [선택 동 현황] (<span id="currentDongTitle">101동</span>)</div>
+        <div class="dong-summary-note">선택한 동의 공정 단계별 현황</div>
+      </div>
+      <div class="stats-container dong-stats-container">
+        <div class="stat-card"><div class="stat-label">동 총 세대수</div><div class="stat-val" id="dongTotal">0</div></div>
+        <div class="stat-card t-confirm"><div class="stat-label">작업확정 (공가 및 이사확정)</div><div class="stat-val" style="color:#e03131" id="dongConfirm">0</div></div>
+        <div class="stat-card demo1"><div class="stat-label">1차철거</div><div class="stat-val" style="color:#8f5b00" id="dongDemo1">0</div></div>
+        <div class="stat-card asbestos"><div class="stat-label">석면철거</div><div class="stat-val" style="color:#6741d9" id="dongAsbestos">0</div></div>
+        <div class="stat-card demo2"><div class="stat-label">2차철거</div><div class="stat-val" style="color:#1864ab" id="dongDemo2">0</div></div>
+        <div class="stat-card finish1"><div class="stat-label">1차마감</div><div class="stat-val" style="color:#d9480f" id="dongFinish1">0</div></div>
+        <div class="stat-card finish2"><div class="stat-label">2차마감</div><div class="stat-val" style="color:#2b8a3e" id="dongFinish2">0</div></div>
+      </div>
+    </div>
+
     <div class="grid-container">
       <table class="grid-table" id="gridTable"></table>
     </div>
@@ -590,6 +614,16 @@ function calculateStats() {
   document.getElementById('stDemo2').textContent = c.demo2;
   document.getElementById('stFinish1').textContent = c.finish1;
   document.getElementById('stFinish2').textContent = c.finish2;
+
+  const d = countDong(currentC, currentD);
+  document.getElementById('currentDongTitle').textContent = currentD;
+  document.getElementById('dongTotal').textContent = d.total;
+  document.getElementById('dongConfirm').textContent = d.target_confirm;
+  document.getElementById('dongDemo1').textContent = d.demo1;
+  document.getElementById('dongAsbestos').textContent = d.asbestos;
+  document.getElementById('dongDemo2').textContent = d.demo2;
+  document.getElementById('dongFinish1').textContent = d.finish1;
+  document.getElementById('dongFinish2').textContent = d.finish2;
 
   const all = emptyCounts();
   for (const cKey in COMPLEXES) {
