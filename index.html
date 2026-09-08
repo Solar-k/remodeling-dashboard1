@@ -91,16 +91,114 @@
       .btn-refresh { margin-left: 0; }
     }
 
+    @page {
+      size: A4 landscape;
+      margin: 7mm;
+    }
+
     @media print {
-      body { background: #fff; padding: 0; color: #000; font-size: 12px; }
-      .wrap { box-shadow: none; padding: 0; max-width: 100%; }
+      html, body {
+        width: 100%;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff;
+        color: #000;
+        font-size: 10px;
+        overflow: visible !important;
+      }
+      .wrap {
+        box-shadow: none;
+        padding: 0;
+        margin: 0;
+        width: 100% !important;
+        max-width: none !important;
+        overflow: visible !important;
+      }
+      #printOutputZone {
+        width: 100% !important;
+        max-width: none !important;
+        overflow: visible !important;
+      }
       .control-bar, .complex-tabs, .dong-tabs, .badge-zone, .btn-refresh { display: none !important; }
-      .print-page-break { page-break-before: always; }
+      .print-page-break { break-before: page; page-break-before: always; }
       .grid-container { border: none; padding: 0; overflow: visible; }
-      .grid-table { width: 100% !important; max-width: 100%; border-spacing: 2px; page-break-inside: avoid; }
-      .p-stats-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin: 10px 0 20px 0; width: 100%; }
-      .p-stat-card { border: 1px solid #999; padding: 5px; text-align: center; border-radius: 4px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .u-btn { width: auto !important; min-width: 50px; height: 35px !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; border: 1px solid #999 !important; }
+
+      /* A4 가로 폭에 모든 호 라인을 강제로 맞춤 */
+      .grid-table {
+        width: 100% !important;
+        max-width: 100% !important;
+        table-layout: fixed !important;
+        border-collapse: separate;
+        border-spacing: 1px !important;
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+      .grid-table th,
+      .grid-table td {
+        min-width: 0 !important;
+        max-width: none !important;
+        padding: 1px !important;
+        overflow: hidden;
+        text-align: center;
+      }
+
+      .print-dong-block {
+        width: 100%;
+        margin: 7px 0 10px 0 !important;
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+      .print-dong-block h3 {
+        margin: 0 0 3px 0 !important;
+        font-size: 10px !important;
+      }
+
+      .p-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 3px;
+        margin: 5px 0 8px 0;
+        width: 100%;
+        page-break-inside: avoid;
+      }
+      .p-stat-card {
+        border: 1px solid #999;
+        padding: 3px;
+        text-align: center;
+        border-radius: 3px;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      /* 기존 min-width:50px 제거: 24호 라인이 잘리던 핵심 원인 */
+      .u-btn {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        height: 27px !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        line-height: 1.05;
+        font-size: 7px !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        border: 1px solid #999 !important;
+        overflow: hidden;
+      }
+      .u-btn span {
+        white-space: nowrap;
+        max-width: 100%;
+        overflow: hidden;
+      }
+
+      /* 호 라인이 많은 동은 한 단계 더 축소 */
+      .print-grid-16 th, .print-grid-16 td { font-size: 7px !important; }
+      .print-grid-20 th, .print-grid-20 td { font-size: 6.5px !important; }
+      .print-grid-24 th, .print-grid-24 td { font-size: 6px !important; padding: 0.5px !important; }
+      .print-grid-20 .u-btn { height: 25px !important; font-size: 6.5px !important; }
+      .print-grid-24 .u-btn { height: 24px !important; font-size: 6px !important; }
+      .print-grid-24 .u-btn span:last-child { font-size: 5.5px !important; }
+
       .st-none { background: #fff !important; }
       .st-target_confirm { background: #ffe3e3 !important; }
       .st-demo1 { background: #f1f3f5 !important; }
@@ -496,25 +594,29 @@ function printAllComplexes() {
 
     for (const dKey in dongs) {
       const lines = dongs[dKey];
-      htmlContent += `<div style="margin:20px 0; page-break-inside:avoid;">
-        <h3 style="font-size:13px; margin-bottom:6px; color:#495057;">📍 ${dKey} 세대별 세부현황</h3>
-        <table class="grid-table" style="width:100%;">
-          <tr><th style="background:#f1f3f5;font-size:11px;padding:4px;">층</th>`;
+      const densityClass = lines.length >= 24 ? 'print-grid-24'
+                         : lines.length >= 20 ? 'print-grid-20'
+                         : lines.length >= 16 ? 'print-grid-16'
+                         : '';
+      htmlContent += `<div class="print-dong-block">
+        <h3 style="color:#495057;">📍 ${dKey} 세대별 세부현황</h3>
+        <table class="grid-table ${densityClass}">
+          <tr><th style="background:#f1f3f5;">층</th>`;
 
-      lines.forEach(l => { htmlContent += `<th style="background:#f1f3f5;font-size:11px;padding:4px;">${l}호</th>`; });
+      lines.forEach(l => { htmlContent += `<th style="background:#f1f3f5;">${l}호</th>`; });
       htmlContent += `</tr>`;
 
       for (let f = totalFloors; f >= 1; f--) {
-        htmlContent += `<tr><th style="background:#f1f3f5;font-size:11px;padding:4px;font-weight:bold;">${f}F</th>`;
+        htmlContent += `<tr><th style="background:#f1f3f5;font-weight:bold;">${f}F</th>`;
         lines.forEach(l => {
           const roomNum = f * 100 + l;
           const key = `${cKey}_${dKey}_${roomNum}`;
           const curStatus = normalizeStatus(state[key]);
           const statusObj = STATUSES.find(s => s.key === curStatus) || STATUSES[0];
           htmlContent += `<td style="text-align:center;">
-            <div class="u-btn st-${curStatus}" style="width:100%;height:32px;font-size:10px;border:1px solid #dee2e6;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+            <div class="u-btn st-${curStatus}" style="display:flex;flex-direction:column;align-items:center;justify-content:center;">
               <span style="font-weight:bold;">${roomNum}</span>
-              <span style="font-size:8px;opacity:.85;">${statusObj.label}</span>
+              <span style="opacity:.85;">${statusObj.label}</span>
             </div>
           </td>`;
         });
